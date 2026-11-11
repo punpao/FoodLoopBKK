@@ -1,0 +1,1763 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2A6419">
+<title>FoodLoopBKK · prototype</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232A6419'/%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='%23fff' stroke-width='4' stroke-dasharray='13 3.75' stroke-linecap='round'/%3E%3C/svg%3E">
+<!-- Fonts load from Google Fonts when online; the stack below falls back to system Thai fonts offline. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&family=Mitr:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* =====================================================================
+   FoodLoopBKK prototype — styles
+   Sections: tokens · base · stage & phone frame · shared components ·
+             onboarding · home · fridge · deals · dispose · rewards ·
+             overlays · guide · feedback (toasts, confetti) · responsive
+   ===================================================================== */
+
+/* ---------- Tokens (greens from BMA_CI.md, one warm accent) ---------- */
+:root {
+  --green-900: #2A6419;   /* BMA Deep Green: primary actions, headings */
+  --green-700: #39682C;   /* BMA Forest Green: caption bars */
+  --green-500: #4BA254;   /* BMA Mid Green: fills and large text only */
+  --green-300: #B9E08A;   /* light leaf: ring fill on dark green */
+  --green-100: #E4F1D9;
+  --green-50:  #F3F8EC;   /* page */
+  --bma-grey:  #F1F1F1;   /* BMA Page Grey, used on the Dispose screens */
+
+  --ink:   #14230E;
+  --ink-2: #3F4F37;
+  --ink-3: #5F6C58;       /* meta text, 5.4:1 on white */
+  --line:  #DCE6D1;
+  --surface: #FFFFFF;
+
+  --amber-500: #F6A609;   /* the one warm accent: rewards and urgency */
+  --amber-100: #FFEFC9;
+  --amber-900: #6F4300;
+  --hot-100:  #FFE1D2;    /* "expires today", a hotter step of the same accent */
+  --hot-900:  #93300A;
+  --danger:   #B3261E;
+
+  --font-display: "Mitr", "Anuphan", "Noto Sans Thai", "Leelawadee UI", "Thonburi", system-ui, sans-serif;
+  --font-body: "Anuphan", "Noto Sans Thai", "Sarabun", "Leelawadee UI", "Thonburi", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --r-card: 22px;
+  --r-btn: 16px;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+}
+
+/* ---------- Base ---------- */
+* { box-sizing: border-box; margin: 0; }
+html, body { height: 100%; }
+body {
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;               /* Thai tone marks need >= 1.5 */
+  color: var(--ink);
+  background: #E6EEDB;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; border: 0; background: none; padding: 0; text-align: inherit; }
+ul, ol { list-style: none; padding: 0; }
+img, svg { display: block; max-width: 100%; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 500; line-height: 1.35; text-wrap: balance; }
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; border-radius: 8px; }
+.on-dark :focus-visible, .on-dark:focus-visible { outline-color: #fff; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.ic { flex: none; }
+.th { font-family: var(--font-body); }
+
+/* ---------- Stage (desktop) and phone frame ---------- */
+.stage {
+  min-height: 100vh; min-height: 100dvh;
+  display: flex; align-items: center; justify-content: center; gap: 56px;
+  padding: 16px; position: relative; overflow: hidden;
+}
+.stage::before {                    /* a faint loop behind the phone */
+  content: ""; position: absolute; width: 980px; height: 980px; border-radius: 50%;
+  border: 96px solid rgba(75, 162, 84, .13); left: -340px; bottom: -520px; pointer-events: none;
+}
+.presenter { display: none; width: 340px; position: relative; }
+.presenter h1 { font-size: 40px; font-weight: 600; color: var(--green-900); line-height: 1.2; display: flex; align-items: center; gap: 12px; }
+.presenter .lede { font-size: 19px; color: var(--ink-2); margin: 12px 0 28px; }
+.journey li { display: flex; gap: 14px; align-items: flex-start; padding: 12px 0; border-top: 1px solid rgba(42, 100, 25, .18); }
+.journey li b { display: block; font-family: var(--font-display); font-weight: 500; color: var(--green-900); }
+.journey li span { color: var(--ink-2); font-size: 15px; }
+.journey .tile { width: 40px; height: 40px; border-radius: 12px; background: var(--green-900); color: #fff; display: grid; place-items: center; flex: none; }
+.presenter .controls { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
+.presenter .note { font-size: 13px; color: var(--ink-3); margin-top: 20px; }
+kbd { font-family: inherit; font-size: 13px; background: #fff; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; padding: 0 6px; }
+
+.phone {
+  width: 410px; flex: none;        /* 390 px app + 10 px bezel each side */
+  height: min(864px, calc(100vh - 32px)); height: min(864px, calc(100dvh - 32px));
+  background: var(--ink); border-radius: 46px; padding: 10px; position: relative;
+  box-shadow: 0 30px 70px -20px rgba(20, 35, 14, .45), 0 0 0 1px rgba(20, 35, 14, .2);
+}
+.app {
+  height: 100%; border-radius: 37px; overflow: hidden; position: relative;
+  background: var(--green-50); display: flex; flex-direction: column;
+}
+.screen { flex: 1; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; outline: none; }
+.screen::-webkit-scrollbar { display: none; }
+.view { padding: 0 16px 20px; display: flex; flex-direction: column; gap: 16px; }
+
+/* ---------- Shared components ---------- */
+.topbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; padding: 18px 0 2px; }
+.topbar h1 { font-size: 26px; color: var(--ink); }
+.topbar h1 .th { font-size: 17px; font-weight: 500; color: var(--ink-3); margin-left: 4px; }
+.eyebrow { font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--green-900); }
+.topbar-actions { display: flex; align-items: center; gap: 6px; flex: none; }
+.pts-pill {
+  min-height: 44px; padding: 0 12px; border-radius: 999px; background: var(--amber-100); color: var(--amber-900);
+  display: inline-flex; align-items: center; gap: 5px; font-weight: 700; font-size: 15px; border: 1.5px solid #F3D48A;
+}
+.pts-pill.bump { animation: bump .5s var(--ease); }
+.icon-btn { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; color: var(--ink-2); background: #fff; border: 1px solid var(--line); }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card); padding: 16px; }
+.section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.section-head h2 { font-size: 19px; }
+.link { color: var(--green-900); font-weight: 600; font-size: 15px; min-height: 44px; display: inline-flex; align-items: center; gap: 2px; }
+.meta { font-size: 14px; color: var(--ink-3); }
+
+.btn {
+  min-height: 50px; padding: 0 20px; border-radius: var(--r-btn); font-weight: 600; font-size: 16px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-align: center;
+  transition: transform .15s var(--ease), background-color .2s, opacity .2s; user-select: none;
+}
+.btn:active { transform: scale(.97); }
+.btn-primary { background: var(--green-900); color: #fff; }
+.btn-primary:hover { background: #235414; }
+.btn-secondary { background: #fff; color: var(--green-900); box-shadow: inset 0 0 0 1.5px var(--green-900); }
+.btn-ghost { color: var(--green-900); }
+.btn-light { background: #fff; color: var(--green-900); }
+.btn-block { width: 100%; }
+.btn-sm { min-height: 44px; padding: 0 14px; font-size: 15px; border-radius: 14px; }
+.btn[disabled] { opacity: .5; cursor: not-allowed; transform: none; }
+label.btn { cursor: pointer; }
+label.btn:focus-within { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 2px 16px; }
+.chips::-webkit-scrollbar { display: none; }
+.chip {
+  min-height: 44px; padding: 0 14px; border-radius: 999px; background: #fff; border: 1.5px solid var(--line);
+  font-weight: 500; font-size: 15px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; flex: none;
+  transition: background-color .2s, color .2s, border-color .2s;
+}
+.chip[aria-pressed="true"] { background: var(--green-900); border-color: var(--green-900); color: #fff; }
+
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--green-100); border-radius: 16px; padding: 4px; gap: 4px; }
+.seg button { min-height: 44px; border-radius: 12px; font-weight: 600; font-size: 15px; color: var(--ink-2); display: flex; align-items: center; justify-content: center; gap: 6px; }
+.seg button[aria-pressed="true"] { background: #fff; color: var(--green-900); box-shadow: 0 1px 3px rgba(20, 35, 14, .12); }
+
+.pill { display: inline-flex; align-items: center; gap: 5px; padding: 1px 10px; border-radius: 999px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.pill-fresh   { background: var(--green-100); color: var(--green-900); }
+.pill-soon    { background: var(--amber-100); color: var(--amber-900); }
+.pill-today   { background: var(--hot-100);  color: var(--hot-900); }
+.pill-expired { background: #ECECEC; color: #4A4A4A; }
+.pill-amber   { background: var(--amber-500); color: var(--ink); }
+.pill-outline { background: transparent; color: var(--ink-3); box-shadow: inset 0 0 0 1.5px var(--line); font-weight: 500; }
+
+.tile { width: 52px; height: 52px; border-radius: 16px; background: var(--green-50); display: grid; place-items: center; font-size: 28px; line-height: 1; flex: none; }
+.proto-note { font-size: 13px; color: var(--ink-3); text-align: center; padding: 4px 8px 0; }
+.empty { text-align: center; padding: 28px 16px; color: var(--ink-2); }
+.empty b { display: block; font-family: var(--font-display); font-weight: 500; font-size: 18px; color: var(--ink); }
+
+/* ---------- Tab bar ---------- */
+.tabbar { display: grid; grid-template-columns: repeat(5, 1fr); background: #fff; border-top: 1px solid var(--line); padding: 6px 4px calc(8px + env(safe-area-inset-bottom)); flex: none; }
+.tabbar[hidden] { display: none; }
+.tab { display: flex; flex-direction: column; align-items: center; min-height: 58px; color: var(--ink-3); border-radius: 14px; }
+.tab .tab-ic { width: 52px; height: 30px; border-radius: 999px; display: grid; place-items: center; transition: background-color .2s; }
+.tab .en { font-size: 12px; font-weight: 600; line-height: 1.4; }
+.tab .th { font-size: 11px; line-height: 1.5; }
+.tab[aria-current="page"] { color: var(--green-900); }
+.tab[aria-current="page"] .tab-ic { background: var(--green-100); }
+
+/* ---------- Loop ring (the signature element) ---------- */
+.ring circle { fill: none; stroke-width: 11; stroke-linecap: round; }
+.ring-track { stroke: rgba(255, 255, 255, .2); }
+.ring-fill { stroke: var(--green-300); }
+.ring-fill.is-fresh { animation: arcdraw .9s var(--ease) both; }
+.ring.is-closed .ring-fill { stroke: var(--amber-500); }
+.ring.on-light .ring-track { stroke: var(--green-100); }
+.ring.on-light .ring-fill { stroke: var(--green-900); }
+
+/* ---------- Onboarding ---------- */
+.ob { min-height: 100%; background: var(--green-900); color: #fff; display: flex; flex-direction: column; padding: 14px 24px 24px; }
+.ob-top { display: flex; justify-content: space-between; align-items: center; min-height: 44px; }
+.ob-brand { font-family: var(--font-display); font-weight: 500; font-size: 17px; display: flex; align-items: center; gap: 8px; }
+.ob-skip { color: #fff; font-weight: 600; min-height: 44px; padding: 0 8px; }
+.ob-body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 18px; padding: 8px 0 16px; animation: rise .45s var(--ease); }
+.ob-art { position: relative; width: 210px; height: 210px; margin: 0 auto 4px; }
+.ob-art .center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.ob-art .big { font-family: var(--font-display); font-weight: 600; font-size: 38px; line-height: 1.1; }
+.ob-art .small { font-size: 14px; color: rgba(255, 255, 255, .88); }
+.ob h1 { font-size: 30px; font-weight: 500; }
+.ob p { color: rgba(255, 255, 255, .9); font-size: 16px; }
+.ob-legend li { display: flex; gap: 12px; align-items: flex-start; padding: 6px 0; }
+.ob-legend .sw { width: 14px; height: 14px; border-radius: 4px; margin-top: 6px; flex: none; }
+.ob-legend b { font-family: var(--font-display); font-weight: 500; font-size: 18px; }
+.ob-steps li { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid rgba(255, 255, 255, .2); }
+.ob-steps .tile { background: rgba(255, 255, 255, .14); color: #fff; width: 44px; height: 44px; border-radius: 14px; }
+.ob-steps b { display: block; font-family: var(--font-display); font-weight: 500; }
+.ob-steps span { font-size: 14px; color: rgba(255, 255, 255, .88); }
+.ob-foot { display: flex; align-items: center; gap: 12px; }
+.ob-foot .btn { white-space: nowrap; padding: 0 16px; }
+.ob-dots { display: flex; gap: 6px; flex: 1; }
+.ob-dots i { width: 8px; height: 8px; border-radius: 99px; background: rgba(255, 255, 255, .35); transition: width .3s var(--ease), background-color .3s; }
+.ob-dots i.on { width: 26px; background: #fff; }
+.ob-note { font-size: 13px; color: rgba(255, 255, 255, .8); margin-top: 14px; }
+
+/* ---------- Home ---------- */
+.brand { font-family: var(--font-display); font-weight: 500; font-size: 15px; color: var(--green-900); display: flex; align-items: center; gap: 6px; }
+.loop-card { background: var(--green-900); color: #fff; border: 0; padding: 18px 16px 14px; }
+.loop-top { display: flex; gap: 14px; align-items: center; }
+.ring-wrap { position: relative; width: 122px; height: 122px; flex: none; }
+.ring-wrap .ring { width: 100%; height: 100%; }
+.ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.2; }
+.ring-center b { font-family: var(--font-display); font-weight: 600; font-size: 34px; display: flex; align-items: center; gap: 2px; }
+.ring-center .flame { color: var(--amber-500); }
+.ring-center small { font-size: 13px; color: rgba(255, 255, 255, .9); }
+.loop-copy { flex: 1; min-width: 0; }
+.loop-copy h2 { font-size: 20px; margin-bottom: 4px; }
+.loop-list button { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; color: #fff; font-weight: 500; font-size: 15px; }
+.loop-list .check { width: 24px; height: 24px; border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .55); display: grid; place-items: center; flex: none; }
+.loop-list .is-done .check { background: var(--green-300); box-shadow: none; color: var(--ink); }
+.loop-list .is-done span { text-decoration: line-through; text-decoration-color: rgba(255, 255, 255, .6); }
+.loop-list .go { margin-left: auto; opacity: .8; }
+.loop-money { display: flex; align-items: baseline; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, .2); }
+.loop-money b { font-family: var(--font-display); font-weight: 600; font-size: 30px; line-height: 1.2; }
+.loop-money span { font-size: 14px; color: rgba(255, 255, 255, .9); }
+
+.mission { background: var(--amber-100); border-color: #F3D48A; display: grid; gap: 10px; }
+.mission .eyebrow { color: var(--amber-900); display: flex; align-items: center; gap: 6px; }
+.mission h2 { font-size: 19px; }
+.mission.is-done { background: var(--green-100); border-color: #C9E2B4; }
+.mission.is-done .eyebrow { color: var(--green-900); }
+
+.soon-strip { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 2px 16px; }
+.soon-strip::-webkit-scrollbar { display: none; }
+.soon-card { flex: none; width: 158px; background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 12px; display: grid; gap: 6px; align-content: start; }
+.soon-card .emoji { font-size: 30px; line-height: 1.2; }
+.soon-card b { font-weight: 600; line-height: 1.35; }
+.soon-card .cook { font-size: 14px; font-weight: 600; color: var(--green-900); display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+
+/* ---------- Fridge ---------- */
+.action-row { display: grid; grid-template-columns: 1.15fr 1fr; gap: 10px; }
+.group-label { font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); margin: 6px 4px -6px; }
+.item { display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 16px; position: relative; overflow: hidden; }
+.item::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--green-500); }
+.item.is-soon::before { background: var(--amber-500); }
+.item.is-today::before { background: #E2571C; }
+.item.is-expired::before { background: #9A9A9A; }
+.item.is-expired .item-name { color: var(--ink-3); text-decoration: line-through; }
+.item.is-new { animation: flash 1.4s var(--ease); }
+.item-body { flex: 1; min-width: 0; display: grid; gap: 3px; justify-items: start; }
+.item-name { font-weight: 600; line-height: 1.4; }
+.item-name .th { font-weight: 400; color: var(--ink-3); font-size: 14px; }
+.item-act { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; color: var(--green-900); background: var(--green-50); flex: none; }
+.item.is-expired .item-act { color: var(--ink-2); background: #F1F1F1; }
+
+.recipe-card { display: flex; gap: 12px; width: 100%; padding: 14px; align-items: flex-start; transition: transform .15s var(--ease); }
+.recipe-card:active { transform: scale(.985); }
+.recipe-body { flex: 1; min-width: 0; display: grid; gap: 6px; justify-items: start; }
+.recipe-title { display: flex; justify-content: space-between; gap: 8px; width: 100%; align-items: baseline; }
+.recipe-title b { font-family: var(--font-display); font-weight: 500; font-size: 17px; line-height: 1.35; }
+.ing-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ing { font-size: 13px; font-weight: 500; padding: 1px 9px; border-radius: 999px; display: inline-flex; align-items: center; gap: 4px; }
+.ing-have { background: var(--green-100); color: var(--green-900); }
+.ing-miss { color: var(--ink-3); box-shadow: inset 0 0 0 1.5px var(--line); }
+
+/* ---------- Deals ---------- */
+.filter-label { font-size: 13px; font-weight: 600; color: var(--ink-3); margin-bottom: -8px; }
+.deal-card { display: grid; gap: 12px; }
+.deal-top { display: flex; gap: 12px; align-items: flex-start; }
+.deal-body { flex: 1; min-width: 0; }
+.deal-body b { font-family: var(--font-display); font-weight: 500; font-size: 17px; line-height: 1.35; display: block; }
+.off { font-family: var(--font-display); font-weight: 600; font-size: 17px; background: var(--amber-500); color: var(--ink); border-radius: 12px; padding: 2px 9px; flex: none; }
+.price { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
+.price .now { font-family: var(--font-display); font-weight: 600; font-size: 24px; color: var(--green-900); line-height: 1.2; }
+.price .was { color: var(--ink-3); text-decoration: line-through; }
+.facts { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 14px; color: var(--ink-2); }
+.facts span { display: inline-flex; align-items: center; gap: 5px; }
+.saved-row { display: flex; align-items: center; gap: 8px; background: var(--green-100); color: var(--green-900); border-radius: 14px; padding: 8px 12px; font-weight: 600; font-size: 15px; }
+
+.map { position: relative; border-radius: var(--r-card); overflow: hidden; border: 1px solid var(--line); background: #EAF1E2; aspect-ratio: 100 / 72; }
+.map svg { width: 100%; height: 100%; }
+.map-tag { position: absolute; left: 10px; top: 8px; font-size: 12px; color: var(--ink-2); background: rgba(255, 255, 255, .85); border-radius: 8px; padding: 0 8px; }
+.pin { position: absolute; transform: translate(-50%, -100%); min-width: 44px; min-height: 44px; display: grid; place-items: end center; padding-bottom: 6px; }
+.pin span { background: var(--green-900); color: #fff; font-weight: 700; font-size: 14px; border-radius: 12px 12px 12px 2px; padding: 3px 8px; box-shadow: 0 2px 6px rgba(20, 35, 14, .3); position: relative; }
+.pin[aria-pressed="true"] span { background: var(--amber-500); color: var(--ink); }
+.pin.is-static span { background: var(--amber-500); color: var(--ink); }
+.you { position: absolute; transform: translate(-50%, -50%); width: 18px; height: 18px; border-radius: 50%; background: #1B6FD1; border: 3px solid #fff; box-shadow: 0 0 0 6px rgba(27, 111, 209, .22); }
+.you-label { position: absolute; transform: translate(-50%, 10px); font-size: 12px; font-weight: 700; color: var(--ink); background: #fff; border-radius: 6px; padding: 0 6px; }
+.route { stroke: var(--green-900); stroke-width: 1.6; fill: none; stroke-dasharray: 3 2.4; stroke-linecap: round; animation: dash 1.2s linear infinite; }
+
+/* ---------- Dispose (leans on the BMA web look: white + grey surfaces, deep-green rule) ---------- */
+.bma-head h2 { font-size: 22px; font-weight: 600; color: var(--green-900); }
+.bma-head { border-bottom: 6px solid var(--green-900); padding-bottom: 10px; }
+.bma-head p { color: var(--ink-2); font-size: 15px; margin-top: 4px; }
+.proto-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--ink-2); background: var(--bma-grey); border-radius: 8px; padding: 2px 10px; margin-top: 10px; }
+.stepper { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.stepper li { font-size: 13px; font-weight: 600; color: var(--ink-3); display: grid; gap: 6px; line-height: 1.4; }
+.stepper li::before { content: ""; height: 6px; border-radius: 99px; background: #D9DFD3; }
+.stepper li.is-done::before { background: var(--green-900); }
+.stepper li.is-now::before { background: var(--amber-500); }
+.stepper li.is-done, .stepper li.is-now { color: var(--ink); }
+.dispose-card { display: grid; gap: 14px; }
+.dispose-card h3 { font-size: 19px; }
+.sort-guide { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sort-guide div { background: var(--bma-grey); border-radius: 16px; padding: 12px; font-size: 14px; }
+.sort-guide b { display: flex; align-items: center; gap: 6px; font-size: 15px; }
+.sort-guide .yes b { color: var(--green-900); }
+.sort-guide .no b { color: var(--danger); }
+.photo { position: relative; border-radius: 18px; overflow: hidden; background: var(--bma-grey); aspect-ratio: 4 / 3; }
+.photo img, .photo svg { width: 100%; height: 100%; object-fit: cover; }
+.photo.is-checking::after { content: ""; position: absolute; left: 0; right: 0; height: 36%; top: -36%; background: linear-gradient(to bottom, transparent, rgba(185, 224, 138, .55)); border-bottom: 2px solid #fff; animation: sweep 1.3s linear infinite; }
+.status-row { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.spinner { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--green-100); border-top-color: var(--green-900); animation: spin .8s linear infinite; flex: none; }
+.alert { background: #FCEBE9; color: #7A1712; border-radius: 16px; padding: 12px 14px; display: flex; gap: 10px; font-size: 15px; }
+.alert b { display: block; }
+.presenter-toggle { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--ink-2); min-height: 44px; cursor: pointer; }
+.presenter-toggle input { width: 20px; height: 20px; accent-color: var(--green-900); }
+
+.ticket { background: #fff; border-radius: var(--r-card); border: 1px solid var(--line); overflow: hidden; animation: pop .5s var(--ease); }
+.ticket-head { background: var(--green-700); color: #fff; padding: 10px 16px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 17px; }
+.ticket-main { padding: 16px; display: flex; gap: 14px; align-items: center; }
+.ticket-main .fee { white-space: nowrap; flex: none; font-family: var(--font-display); font-weight: 600; font-size: 54px; line-height: 1.1; color: var(--green-900); }
+.ticket-main .fee small { font-size: 18px; font-weight: 500; }
+.ticket-main p { font-size: 15px; color: var(--ink-2); }
+.ticket-cut { border-top: 2px dashed var(--line); margin: 0 16px; position: relative; }
+.ticket-cut::before, .ticket-cut::after { content: ""; position: absolute; top: -11px; width: 20px; height: 20px; border-radius: 50%; background: var(--green-50); border: 1px solid var(--line); }
+.ticket-cut::before { left: -27px; } .ticket-cut::after { right: -27px; }
+.ticket-qr { padding: 16px; display: flex; gap: 14px; align-items: center; }
+.ticket-qr svg { width: 104px; height: 104px; flex: none; background: #fff; padding: 6px; border: 1px solid var(--line); border-radius: 10px; }
+.code { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-weight: 700; letter-spacing: .06em; font-size: 15px; }
+
+/* ---------- Rewards ---------- */
+.level-card { display: grid; gap: 12px; }
+.level-top { display: flex; align-items: center; gap: 12px; }
+.level-top .tile { background: var(--green-100); }
+.level-top h2 { font-size: 21px; }
+.balance { margin-left: auto; text-align: right; line-height: 1.25; }
+.balance b { font-family: var(--font-display); font-weight: 600; font-size: 28px; color: var(--amber-900); display: block; }
+.bar { height: 12px; border-radius: 99px; background: var(--green-100); overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 99px; background: var(--green-500); transition: width .6s var(--ease); }
+.level-track { display: grid; grid-template-columns: repeat(5, 1fr); font-size: 12px; text-align: center; color: var(--ink-3); font-weight: 500; }
+.level-track li.is-on { color: var(--green-900); font-weight: 700; }
+.level-track .emo { display: block; font-size: 20px; filter: grayscale(1); opacity: .55; }
+.level-track li.is-on .emo { filter: none; opacity: 1; }
+.metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.metric { padding: 14px; display: grid; gap: 2px; }
+.metric .ic { color: var(--green-900); }
+.metric b { font-family: var(--font-display); font-weight: 600; font-size: 28px; line-height: 1.25; }
+.metric b small { font-size: 16px; font-weight: 500; }
+.metric span { font-size: 14px; color: var(--ink-2); }
+.week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+.week li { display: grid; gap: 4px; justify-items: center; font-size: 13px; font-weight: 600; color: var(--ink-3); }
+.week .dot { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--bma-grey); color: #B5B5B5; }
+.week .is-done .dot { background: var(--amber-500); color: var(--ink); }
+.week .is-today .dot { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--green-900); }
+.week .is-today { color: var(--green-900); }
+.streak-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.streak-head b { font-family: var(--font-display); font-weight: 600; font-size: 28px; line-height: 1.2; }
+.streak-head .flame { color: var(--amber-500); }
+.perk { display: flex; gap: 12px; align-items: center; padding: 12px; }
+.perk-body { flex: 1; min-width: 0; }
+.perk-body b { font-weight: 600; line-height: 1.35; display: block; }
+.perk.is-locked .tile { filter: grayscale(1); opacity: .6; }
+.perk-state { flex: none; text-align: right; }
+.locked-label { display: inline-flex; align-items: center; gap: 5px; font-size: 14px; font-weight: 600; color: var(--ink-3); min-height: 44px; }
+.log li { display: flex; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); font-size: 15px; }
+.log li:first-child { border-top: 0; }
+.log .pts { margin-left: auto; font-weight: 700; color: var(--amber-900); white-space: nowrap; }
+.log .when { font-size: 13px; color: var(--ink-3); }
+
+/* ---------- Overlays (sheets, scan, directions) ---------- */
+.overlay { position: absolute; inset: 0; z-index: 30; background: rgba(20, 35, 14, .55); display: flex; flex-direction: column; justify-content: flex-end; animation: fade .2s; }
+.sheet { background: #fff; border-radius: 28px 28px 0 0; max-height: 92%; overflow-y: auto; padding: 10px 20px 24px; animation: up .3s var(--ease); outline: none; display: grid; gap: 14px; align-content: start; }
+.sheet.is-full { height: 100%; max-height: 100%; border-radius: 0; }
+.sheet-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; position: sticky; top: -10px; background: #fff; padding: 8px 0 4px; margin-top: -8px; z-index: 2; }
+.sheet-head h2 { font-size: 22px; }
+.sheet-head .th { display: block; font-size: 15px; color: var(--ink-3); font-weight: 400; }
+.close { width: 44px; height: 44px; border-radius: 50%; background: var(--green-50); display: grid; place-items: center; flex: none; }
+.field { display: grid; gap: 6px; }
+.field label, .field .label { font-weight: 600; font-size: 15px; }
+.field input { min-height: 50px; border-radius: 14px; border: 1.5px solid #B9C6AD; padding: 0 14px; background: #fff; width: 100%; }
+.field input:focus-visible { outline: 3px solid var(--green-900); outline-offset: 1px; border-radius: 14px; }
+.field .hint { font-size: 14px; color: var(--ink-3); }
+.field .error { font-size: 14px; color: var(--danger); font-weight: 600; }
+.field .error:empty { display: none; }
+.field .chips { margin: 0; padding: 2px 0; flex-wrap: wrap; overflow: visible; }
+
+.ing-list li { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); }
+.ing-list li:first-child { border-top: 0; }
+.ing-list .mark { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--green-900); color: #fff; }
+.ing-list .is-miss .mark { background: #fff; color: var(--ink-3); box-shadow: inset 0 0 0 1.5px #B5BFAB; }
+.ing-list .right { margin-left: auto; }
+.steps { counter-reset: s; display: grid; gap: 8px; }
+.steps li { counter-increment: s; display: flex; gap: 10px; color: var(--ink-2); font-size: 15px; }
+.steps li::before { content: counter(s); width: 24px; height: 24px; border-radius: 50%; background: var(--green-100); color: var(--green-900); font-weight: 700; font-size: 13px; display: grid; place-items: center; flex: none; margin-top: 1px; }
+.win { text-align: center; display: grid; gap: 6px; justify-items: center; padding-top: 4px; }
+.win .emoji { font-size: 52px; line-height: 1.2; animation: pop .5s var(--ease); }
+.win h2 { font-size: 24px; }
+.win-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; }
+.win-stats div { background: var(--green-50); border-radius: 16px; padding: 10px 4px; }
+.win-stats b { font-family: var(--font-display); font-weight: 600; font-size: 22px; display: block; line-height: 1.3; }
+.win-stats span { font-size: 13px; color: var(--ink-2); }
+.banner-amber { background: var(--amber-100); color: var(--amber-900); border-radius: 16px; padding: 12px 14px; display: flex; gap: 10px; align-items: center; font-weight: 600; }
+.banner-amber b { font-family: var(--font-display); font-size: 22px; font-weight: 600; color: var(--ink); }
+
+.scan { position: absolute; inset: 0; z-index: 30; background: #0C1508; color: #fff; display: flex; flex-direction: column; animation: fade .2s; }
+.scan-top { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; }
+.scan-top .close { background: rgba(255, 255, 255, .14); color: #fff; }
+.viewfinder { flex: 1; position: relative; display: grid; place-items: center; overflow: hidden; }
+.receipt { width: 190px; background: #FBFBF7; color: #222; border-radius: 4px; padding: 16px 14px 20px; transform: rotate(-4deg); font-family: ui-monospace, Menlo, monospace; font-size: 11px; line-height: 1.7; box-shadow: 0 10px 40px rgba(0, 0, 0, .5); }
+.receipt b { display: block; text-align: center; font-size: 12px; }
+.receipt .row { display: flex; justify-content: space-between; }
+.receipt .barcode { height: 36px; margin-top: 10px; background: repeating-linear-gradient(90deg, #111 0 2px, transparent 2px 4px, #111 4px 5px, transparent 5px 9px, #111 9px 12px, transparent 12px 14px); }
+.frame { position: absolute; inset: 12% 14%; border-radius: 22px; pointer-events: none; }
+.frame { border: 3px solid #fff;
+  --corner: linear-gradient(#000 0 0);
+  -webkit-mask: var(--corner) top left / 36px 36px no-repeat, var(--corner) top right / 36px 36px no-repeat, var(--corner) bottom left / 36px 36px no-repeat, var(--corner) bottom right / 36px 36px no-repeat;
+          mask: var(--corner) top left / 36px 36px no-repeat, var(--corner) top right / 36px 36px no-repeat, var(--corner) bottom left / 36px 36px no-repeat, var(--corner) bottom right / 36px 36px no-repeat; }
+.scanline { position: absolute; left: 16%; right: 16%; height: 3px; border-radius: 3px; background: var(--green-300); box-shadow: 0 0 18px 4px rgba(185, 224, 138, .7); top: 16%; animation: scanline 1.6s ease-in-out infinite alternate; }
+.scan-status { padding: 16px 20px 28px; text-align: center; display: grid; gap: 4px; }
+.scan-status b { font-family: var(--font-display); font-weight: 500; font-size: 19px; }
+.scan-status span { font-size: 14px; color: rgba(255, 255, 255, .8); }
+.scan .sheet { position: absolute; left: 0; right: 0; bottom: 0; color: var(--ink); max-height: 78%; }
+.found li { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+.found li:first-child { border-top: 0; }
+.found .emoji { font-size: 24px; width: 32px; text-align: center; }
+.found .right { margin-left: auto; }
+
+/* ---------- Demo guide ---------- */
+.guide { background: var(--ink); color: #fff; padding: 12px 14px; display: grid; gap: 8px; flex: none; animation: up .3s var(--ease); }
+.guide:empty { display: none; }
+.guide-top { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--green-300); letter-spacing: .04em; text-transform: uppercase; }
+.guide-top .done { margin-left: auto; color: var(--ink); background: var(--green-300); border-radius: 99px; padding: 0 8px; text-transform: none; letter-spacing: 0; display: inline-flex; gap: 4px; align-items: center; }
+.guide b { font-family: var(--font-display); font-weight: 500; font-size: 17px; line-height: 1.35; }
+.guide p { font-size: 14px; color: rgba(255, 255, 255, .9); }
+.guide-actions { display: flex; gap: 8px; align-items: center; }
+.guide-actions .btn { min-height: 44px; font-size: 15px; padding: 0 16px; border-radius: 14px; }
+.guide-actions .g-next { background: var(--amber-500); color: var(--ink); margin-left: auto; }
+.guide-actions .g-ghost { color: #fff; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .45); }
+.guide-target { outline: 3px solid var(--amber-500) !important; outline-offset: 3px; animation: pulse 1.5s ease-out infinite; }
+
+/* ---------- Feedback: toasts and confetti ---------- */
+.toasts { position: absolute; top: 12px; left: 12px; right: 12px; z-index: 50; display: grid; gap: 8px; pointer-events: none; }
+.toast { background: var(--ink); color: #fff; border-radius: 16px; padding: 10px 14px; font-size: 15px; box-shadow: 0 8px 24px rgba(20, 35, 14, .3); animation: drop .35s var(--ease); display: flex; gap: 8px; align-items: center; }
+.toast b { color: var(--amber-500); white-space: nowrap; }
+.toast.is-amber { background: var(--amber-500); color: var(--ink); font-weight: 600; }
+.toast.is-amber b { color: var(--ink); }
+.toast.out { opacity: 0; transform: translateY(-8px); transition: opacity .3s, transform .3s; }
+.fx { position: absolute; inset: 0; z-index: 60; overflow: hidden; pointer-events: none; }
+.confetti { position: absolute; top: -14px; width: 9px; height: 14px; border-radius: 2px; animation: fall 1.7s cubic-bezier(.3, .6, .6, 1) forwards; }
+
+/* ---------- Keyframes ---------- */
+@keyframes fade { from { opacity: 0; } }
+@keyframes up { from { transform: translateY(28px); opacity: 0; } }
+@keyframes rise { from { transform: translateY(14px); opacity: 0; } }
+@keyframes drop { from { transform: translateY(-14px); opacity: 0; } }
+@keyframes pop { 0% { transform: scale(.85); opacity: 0; } 60% { transform: scale(1.04); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes bump { 40% { transform: scale(1.14); } }
+@keyframes flash { 0%, 40% { background: var(--amber-100); } }
+@keyframes arcdraw { from { stroke-dasharray: 0 300; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes sweep { to { top: 100%; } }
+@keyframes scanline { to { top: 82%; } }
+@keyframes dash { to { stroke-dashoffset: -5.4; } }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(246, 166, 9, .55); } 100% { box-shadow: 0 0 0 14px rgba(246, 166, 9, 0); } }
+@keyframes fall { to { transform: translate(var(--dx), 900px) rotate(var(--rot)); opacity: .85; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+/* ---------- Responsive: full screen on phones, presenter panel on wide screens ---------- */
+@media (max-width: 380px) {
+  .ring-wrap { width: 100px; height: 100px; }
+  .ring-center b { font-size: 28px; }
+  .loop-top { gap: 12px; }
+  .loop-copy h2 { font-size: 18px; }
+  .topbar h1 { font-size: 24px; }
+}
+@media (max-height: 700px) {
+  .ob-art { width: 150px; height: 150px; }
+  .ob-art svg { width: 100%; height: 100%; }
+  .ob-art .big { font-size: 28px !important; }
+  .ob h1 { font-size: 26px; }
+  .ob-body { gap: 12px; }
+}
+@media (max-width: 520px) {
+  .stage { padding: 0; }
+  .stage::before { display: none; }
+  .phone { width: 100%; height: 100vh; height: 100dvh; border-radius: 0; padding: 0; box-shadow: none; }
+  .app { border-radius: 0; padding-top: env(safe-area-inset-top); }
+}
+@media (min-width: 980px) {
+  .presenter { display: block; }
+}
+</style>
+</head>
+
+<body>
+<div class="stage">
+
+  <!-- Presenter panel: shown beside the phone on wide screens only -->
+  <aside class="presenter" aria-label="Presenter panel">
+    <h1><span id="brandMark"></span>FoodLoopBKK</h1>
+    <p class="lede">Turn caring about food waste into a daily habit that pays you back.</p>
+    <ul class="journey" id="journey"></ul>
+    <div class="controls">
+      <button class="btn btn-primary btn-sm" data-action="guide-start">Start demo guide</button>
+      <button class="btn btn-secondary btn-sm" data-action="reset">Reset demo</button>
+    </div>
+    <p class="note">With the guide running, <kbd>←</kbd> <kbd>→</kbd> step through it. <br>Prototype for a case-competition pitch. Scanning, photo checks, maps, stores and partners are simulated, and in-app figures are illustrative demo data.</p>
+  </aside>
+
+  <div class="phone">
+    <div class="app" id="app">
+      <main class="screen" id="screen" tabindex="-1"></main>
+      <div class="guide" id="guide" role="region" aria-label="Demo guide"></div>
+      <nav class="tabbar" id="tabbar" aria-label="Main"></nav>
+      <div id="overlay"></div>
+      <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+      <div class="fx" id="fx" aria-hidden="true"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   FoodLoopBKK prototype — script
+   1. Data       mock catalogues (foods, recipes, stores, deals, perks)
+   2. State      one in-memory object; seedState() is also "Reset demo"
+   3. Helpers    dates, formatting, icons, derived values
+   4. Rendering  one function per screen and per overlay
+   5. Handlers   actions{} dispatched from data-action attributes
+   6. Guide      the presenter's step-by-step demo guide
+   7. Boot
+   Nothing here talks to a network, camera API or storage: every scan,
+   photo check and map is simulated with timers and canned data.
+   ===================================================================== */
+
+/* ============================== 1. DATA ============================== */
+
+// Ingredient catalogue. `alias` lets manually typed names match recipes.
+const FOODS = {
+  bread:    { name: 'Sliced bread',   th: 'ขนมปัง',     icon: '🍞', alias: ['bread', 'toast', 'ขนมปัง'] },
+  basil:    { name: 'Holy basil',     th: 'กะเพรา',     icon: '🌿', alias: ['basil', 'กะเพรา'] },
+  pork:     { name: 'Minced pork',    th: 'หมูสับ',      icon: '🥩', alias: ['pork', 'หมู'] },
+  egg:      { name: 'Eggs',           th: 'ไข่ไก่',      icon: '🥚', alias: ['egg', 'ไข่'] },
+  rice:     { name: 'Cooked rice',    th: 'ข้าวสวย',     icon: '🍚', alias: ['rice', 'ข้าว'] },
+  milk:     { name: 'Fresh milk',     th: 'นมสด',       icon: '🥛', alias: ['milk', 'นม'] },
+  tomato:   { name: 'Tomatoes',       th: 'มะเขือเทศ',   icon: '🍅', alias: ['tomato', 'มะเขือเทศ'] },
+  yogurt:   { name: 'Yogurt',         th: 'โยเกิร์ต',     icon: '🥣', alias: ['yogurt', 'yoghurt', 'โยเกิร์ต'] },
+  garlic:   { name: 'Garlic',         th: 'กระเทียม',    icon: '🧄', alias: ['garlic', 'กระเทียม'] },
+  banana:   { name: 'Bananas',        th: 'กล้วย',       icon: '🍌', alias: ['banana', 'กล้วย'] },
+  chicken:  { name: 'Chicken breast', th: 'อกไก่',       icon: '🍗', alias: ['chicken', 'ไก่'] },
+  glory:    { name: 'Morning glory',  th: 'ผักบุ้ง',      icon: '🥬', alias: ['morning glory', 'ผักบุ้ง'] },
+  tofu:     { name: 'Soft tofu',      th: 'เต้าหู้',      icon: '🍢', alias: ['tofu', 'เต้าหู้'] },
+  coconut:  { name: 'Coconut milk',   th: 'กะทิ',        icon: '🥥', alias: ['coconut', 'กะทิ'] },
+  mushroom: { name: 'Mushrooms',      th: 'เห็ด',        icon: '🍄', alias: ['mushroom', 'เห็ด'] },
+  lime:     { name: 'Limes',          th: 'มะนาว',      icon: '🍋', alias: ['lime', 'มะนาว'] },
+  galangal: { name: 'Galangal',       th: 'ข่า',         icon: '🌿', alias: ['galangal', 'ข่า'] },
+  chili:    { name: 'Chilies',        th: 'พริก',        icon: '🌶️', alias: ['chili', 'chilli', 'พริก'] },
+};
+// Icon guesses for manual entries that are not in the catalogue.
+const ICON_GUESS = [['kimchi', '🥬'], ['apple', '🍎'], ['mango', '🥭'], ['fish', '🐟'], ['shrimp', '🦐'], ['cheese', '🧀'],
+  ['carrot', '🥕'], ['noodle', '🍜'], ['curry', '🍛'], ['orange', '🍊'], ['butter', '🧈'], ['salad', '🥗'], ['cake', '🍰']];
+
+// Seed fridge: [key, quantity, days until expiry, price THB, weight kg]. Prices and weights are illustrative.
+const SEED_FRIDGE = [
+  ['yogurt', '1 cup', -1, 25, 0.15],
+  ['basil', '1 bunch', 0, 15, 0.05],
+  ['bread', '6 slices', 1, 45, 0.4],
+  ['rice', '2 cups', 1, 15, 0.3],
+  ['milk', '500 ml', 2, 52, 0.5],
+  ['banana', '3 pcs', 2, 25, 0.35],
+  ['pork', '300 g', 3, 60, 0.3],
+  ['tomato', '4 pcs', 4, 30, 0.4],
+  ['egg', '6 pcs', 9, 48, 0.36],
+  ['garlic', '1 head', 14, 20, 0.1],
+];
+
+// The mock receipt that "Scan receipt" reads.
+const RECEIPT = {
+  store: 'Talad Jai Dee Mart',
+  items: [
+    ['glory', '1 bunch', 2, 20, 0.25],
+    ['chicken', '400 g', 3, 89, 0.4],
+    ['mushroom', '200 g', 3, 45, 0.2],
+    ['tofu', '1 block', 4, 18, 0.3],
+    ['lime', '5 pcs', 10, 25, 0.25],
+    ['coconut', '250 ml', 30, 32, 0.25],
+  ],
+};
+
+// Recipes. `keep: true` marks long-life staples that stay in the fridge after cooking.
+const RECIPES = [
+  { id: 'frenchtoast', name: 'Thai-style French toast', th: 'ขนมปังชุบไข่', icon: '🍳', mins: 10,
+    ings: [{ key: 'bread' }, { key: 'milk' }, { key: 'banana' }, { key: 'egg', keep: true }], pantry: 'butter, sugar',
+    steps: ['Whisk egg with milk and a pinch of sugar.', 'Soak the bread, then pan-fry in butter until golden.', 'Top with sliced banana.'] },
+  { id: 'krapow', name: 'Pad krapow moo', th: 'ผัดกะเพราหมูสับ', icon: '🍛', mins: 15,
+    ings: [{ key: 'basil' }, { key: 'pork' }, { key: 'rice' }, { key: 'garlic', keep: true }, { key: 'egg', keep: true }], pantry: 'oil, fish sauce, soy sauce',
+    steps: ['Fry garlic, then the pork, on high heat.', 'Season, toss in the basil and take off the heat.', 'Serve over rice with a fried egg.'] },
+  { id: 'khaopad', name: 'Leftover-rice khao pad', th: 'ข้าวผัดไข่', icon: '🍚', mins: 12,
+    ings: [{ key: 'rice' }, { key: 'tomato' }, { key: 'egg', keep: true }, { key: 'garlic', keep: true }, { key: 'lime', keep: true }], pantry: 'oil, soy sauce',
+    steps: ['Scramble the egg with garlic.', 'Add cold rice and tomato, stir-fry until dry and hot.', 'Season and serve with a lime wedge.'] },
+  { id: 'tomatoegg', name: 'Tomato and egg stir-fry', th: 'ไข่ผัดมะเขือเทศ', icon: '🍅', mins: 10,
+    ings: [{ key: 'tomato' }, { key: 'rice' }, { key: 'egg', keep: true }, { key: 'garlic', keep: true }], pantry: 'oil, sugar, fish sauce',
+    steps: ['Soft-scramble the eggs and set aside.', 'Cook tomato wedges with garlic until saucy.', 'Fold the eggs back in and serve over rice.'] },
+  { id: 'khaijiao', name: 'Khai jiao over rice', th: 'ไข่เจียว', icon: '🥚', mins: 8,
+    ings: [{ key: 'rice' }, { key: 'egg', keep: true }], pantry: 'oil, fish sauce',
+    steps: ['Beat eggs with fish sauce until frothy.', 'Fry in hot oil until puffed and crisp at the edges.', 'Serve on warm rice.'] },
+  { id: 'pakboong', name: 'Pad pak boong', th: 'ผัดผักบุ้งไฟแดง', icon: '🥬', mins: 7,
+    ings: [{ key: 'glory' }, { key: 'garlic', keep: true }, { key: 'chili' }], pantry: 'oil, oyster sauce',
+    steps: ['Smash garlic and chili.', 'Stir-fry the morning glory on very high heat for a minute.', 'Season and serve at once.'] },
+  { id: 'tomkha', name: 'Tom kha gai', th: 'ต้มข่าไก่', icon: '🍲', mins: 25,
+    ings: [{ key: 'chicken' }, { key: 'mushroom' }, { key: 'coconut' }, { key: 'lime', keep: true }, { key: 'galangal' }], pantry: 'fish sauce',
+    steps: ['Simmer coconut milk with galangal.', 'Add chicken and mushrooms and cook through.', 'Finish with lime juice and fish sauce.'] },
+  { id: 'gaengjued', name: 'Gaeng jued tofu', th: 'แกงจืดเต้าหู้หมูสับ', icon: '🥣', mins: 15,
+    ings: [{ key: 'tofu' }, { key: 'pork' }, { key: 'mushroom' }, { key: 'garlic', keep: true }], pantry: 'stock, soy sauce',
+    steps: ['Bring stock to a simmer with garlic.', 'Drop in small pork balls and the mushrooms.', 'Add tofu, warm through and season.'] },
+];
+
+// Fictional stores. x / y place them on the illustrative map (viewBox 100 x 72).
+const STORES = {
+  yimyim:  { name: 'Yim Yim Bakehouse',     type: 'Bakery',        dist: 350,  x: 40, y: 48 },
+  jaidee:  { name: 'Talad Jai Dee Mart',    type: 'Supermarket',   dist: 600,  x: 14, y: 40 },
+  baanpak: { name: 'Baan Pak Greens',       type: 'Produce stall', dist: 900,  x: 66, y: 40 },
+  imdee:   { name: 'Im Dee Kitchen',        type: 'Cooked food',   dist: 1200, x: 88, y: 52 },
+  nomsod:  { name: 'Nom Sod Dairy Bar',     type: 'Dairy shop',    dist: 1800, x: 66, y: 18 },
+  soi:     { name: 'Soi Loop Fresh Market', type: 'Fresh market',  dist: 2400, x: 88, y: 18 },
+};
+const YOU = { x: 27, y: 60 };
+
+const CATEGORIES = [['all', 'All'], ['bakery', 'Bakery'], ['ready', 'Ready-to-eat'], ['produce', 'Produce'], ['dairy', 'Dairy & eggs']];
+const DISTANCES = [[0, 'Any distance'], [500, 'Within 500 m'], [1000, 'Within 1 km'], [2000, 'Within 2 km']];
+const ENDING_SOON_MIN = 60;
+
+// Surplus deals. `endsIn` is minutes until the pickup window closes (mock).
+const DEALS = [
+  { id: 'd1',  store: 'yimyim',  cat: 'bakery',  icon: '🥐', name: 'Butter croissant box (4 pcs)', was: 160, now: 72, left: 3, pickup: '18:00–20:00', endsIn: 35,  kg: 0.3 },
+  { id: 'd2',  store: 'yimyim',  cat: 'bakery',  icon: '🍞', name: 'Sourdough loaf',               was: 120, now: 60, left: 5, pickup: '18:00–20:00', endsIn: 35,  kg: 0.5 },
+  { id: 'd3',  store: 'jaidee',  cat: 'ready',   icon: '🥗', name: 'Salad bowl with grilled tofu', was: 129, now: 58, left: 4, pickup: '19:00–21:00', endsIn: 95,  kg: 0.35 },
+  { id: 'd4',  store: 'jaidee',  cat: 'dairy',   icon: '🥛', name: 'Fresh milk 1 L, best before tomorrow', was: 58, now: 29, left: 6, pickup: '19:00–21:00', endsIn: 95, kg: 1 },
+  { id: 'd5',  store: 'baanpak', cat: 'produce', icon: '🥬', name: 'Veggie rescue box',            was: 140, now: 77, left: 2, pickup: '17:30–19:00', endsIn: 20,  kg: 1.5 },
+  { id: 'd6',  store: 'baanpak', cat: 'produce', icon: '🥭', name: 'Ripe mangoes 1 kg',            was: 85,  now: 51, left: 7, pickup: '17:30–19:00', endsIn: 20,  kg: 1 },
+  { id: 'd7',  store: 'imdee',   cat: 'ready',   icon: '🍛', name: 'Green curry and rice set',     was: 120, now: 48, left: 2, pickup: '20:00–21:30', endsIn: 150, kg: 0.45 },
+  { id: 'd8',  store: 'imdee',   cat: 'ready',   icon: '🍱', name: 'Grilled chicken rice box',     was: 90,  now: 45, left: 4, pickup: '20:00–21:30', endsIn: 150, kg: 0.4 },
+  { id: 'd9',  store: 'nomsod',  cat: 'dairy',   icon: '🥣', name: 'Yogurt cups × 4',              was: 75,  now: 33, left: 5, pickup: '18:30–20:30', endsIn: 55,  kg: 0.5 },
+  { id: 'd10', store: 'soi',     cat: 'dairy',   icon: '🥚', name: 'Eggs × 10, near date',         was: 65,  now: 39, left: 8, pickup: '17:00–19:30', endsIn: 45,  kg: 0.6 },
+];
+
+// Reward perks from fictional partners.
+const PERKS = [
+  { id: 'p1', icon: '🛍️', name: 'Reusable produce bag',     partner: 'Loop Goods',         cost: 150 },
+  { id: 'p2', icon: '🧋', name: 'Free Thai iced tea',        partner: 'Cha Yen Cart',       cost: 200 },
+  { id: 'p3', icon: '🥐', name: '฿30 off any surplus deal',  partner: 'Yim Yim Bakehouse',  cost: 300 },
+  { id: 'p4', icon: '🪱', name: 'Compost starter kit',       partner: 'Din Dee Urban Farm', cost: 500 },
+  { id: 'p5', icon: '🚲', name: 'Bike-share day pass',       partner: 'Wongwian Bikes',     cost: 800 },
+  { id: 'p6', icon: '👩‍🍳', name: 'Zero-waste cooking class', partner: 'Krua Loop Studio',   cost: 1200 },
+];
+
+const LEVELS = [
+  { name: 'Seedling', min: 0,    icon: '🌱' },
+  { name: 'Sprout',   min: 200,  icon: '🌿' },
+  { name: 'Sapling',  min: 500,  icon: '🪴' },
+  { name: 'Tree',     min: 1000, icon: '🌳' },
+  { name: 'Forest',   min: 2000, icon: '🌲' },
+];
+const POINTS = { scan: 20, log: 5, use: 10, cook: 40, perRescue: 10, mission: 25, deal: 30, dispose: 60, loopBonus: 50 };
+const STREAK_MILESTONES = [3, 5, 7, 14, 30];
+const CO2E_PER_KG = 2.5;      // illustrative demo factor, kg CO2e per kg of food kept out of the bin
+const FEE_THB = 20;           // discounted collection fee named in the pitch brief
+const NEAR_DAYS = 2;          // "expiring soon" = today, tomorrow or the day after
+
+// The three arcs of the daily loop, in journey order.
+const LOOP = [
+  { key: 'eat',  tab: 'fridge',  label: 'Use your fridge',   phase: 'Before you eat',   icon: 'fridge', blurb: 'Smart fridge and recipes' },
+  { key: 'save', tab: 'deals',   label: 'Rescue a deal',     phase: 'Before you waste', icon: 'tag',    blurb: 'Surplus food at 40–60% off' },
+  { key: 'sort', tab: 'dispose', label: 'Sort your scraps',  phase: 'When you dispose', icon: 'bin',    blurb: 'ไม่เทรวม sorting, ฿20 fee' },
+];
+
+const TABS = [
+  { id: 'home',    en: 'Home',    th: 'หน้าหลัก', icon: 'home' },
+  { id: 'fridge',  en: 'Fridge',  th: 'ตู้เย็น',   icon: 'fridge' },
+  { id: 'deals',   en: 'Deals',   th: 'ดีล',      icon: 'tag' },
+  { id: 'dispose', en: 'Dispose', th: 'ไม่เทรวม', icon: 'bin' },
+  { id: 'rewards', en: 'Rewards', th: 'รางวัล',   icon: 'trophy' },
+];
+
+/* ============================== 2. STATE ============================= */
+
+let uid = 0;
+let state;
+let timers = [];                    // every pending timeout, so Reset can cancel them
+let lastPoints = null;              // lets the points pill "bump" when the balance changes
+let lastOverlayKey = null;          // lets us move focus only when a new overlay opens
+
+function makeItem([key, qty, days, price, kg], extra = {}) {
+  const f = FOODS[key];
+  return { id: 'i' + (++uid), key, name: f.name, th: f.th, icon: f.icon, qty, expires: iso(addDays(days)), price, kg, ...extra };
+}
+
+// The full initial state. Calling this again is exactly what "Reset demo" does.
+function seedState() {
+  return {
+    screen: 'onboarding',           // 'onboarding' | 'app'
+    obStep: 0,
+    tab: 'home',
+    overlay: null,                  // { type, ... } for sheets and full-screen flows
+
+    fridge: SEED_FRIDGE.map(row => makeItem(row)),
+    fridgeView: 'items',            // 'items' | 'recipes'
+    scanned: false,
+    mission: { key: 'bread', done: false },
+
+    deals: DEALS.map(d => ({ ...d, navigated: false })),
+    dealsView: 'list',              // 'list' | 'map'
+    filters: { cat: 'all', dist: 0, endingSoon: false },
+    mapStore: 'yimyim',
+
+    dispose: { status: 'idle', photo: null, forceFail: false },   // idle | photo | checking | rejected | success
+
+    // Illustrative totals for "this month" so the app looks lived-in on first load.
+    stats: { money: 486, kg: 4.2, items: 14 },
+    points: 290,                    // spendable balance
+    xp: 440,                        // lifetime points, drives the level
+    streak: 4,
+    todayDone: false,
+    pastWeek: [true, false, true, true, true, true],   // the six days before today
+    loop: { eat: false, save: false, sort: false },
+    loopBonus: false,
+    freshArcs: [],                  // arcs to animate the next time Home renders
+    redeemed: { p1: 'LOOP-BAG-7F3K' },
+    log: [
+      { icon: '🍚', text: 'Cooked leftover-rice khao pad', pts: 50, when: 'Yesterday' },
+      { icon: '🍞', text: 'Picked up a sourdough loaf at 50% off', pts: 30, when: 'Yesterday' },
+      { icon: '🗑️', text: 'Sorted organic waste, photo verified', pts: 60, when: '2 days ago' },
+    ],
+
+    guide: { active: false, step: 0, done: {}, scroll: false },
+  };
+}
+
+/* ============================== 3. HELPERS =========================== */
+
+const $ = (sel, root = document) => root.querySelector(sel);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const baht = n => '฿' + Math.round(n).toLocaleString('en-US');
+const plural = (n, one, many = one + 's') => `${n} ${n === 1 ? one : many}`;
+const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// --- Dates (date-only, local time)
+const DAY_MS = 86400000;
+function today() { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }
+function addDays(n) { const d = today(); d.setDate(d.getDate() + n); return d; }
+function iso(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+function fromIso(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
+const daysLeft = item => Math.round((fromIso(item.expires) - today()) / DAY_MS);
+
+// Freshness state and countdown label for a days-left value.
+function freshness(d) {
+  if (d < 0)  return { state: 'expired', group: 'Expired',       label: `Expired ${plural(-d, 'day')} ago` };
+  if (d === 0) return { state: 'today',  group: 'Expires today', label: 'Expires today' };
+  if (d <= NEAR_DAYS) return { state: 'soon', group: 'Use soon', label: `${plural(d, 'day')} left` };
+  return { state: 'fresh', group: 'Fresh', label: `${plural(d, 'day')} left` };
+}
+const isNear = d => d >= 0 && d <= NEAR_DAYS;
+const pillFor = d => { const f = freshness(d); return `<span class="pill pill-${f.state}">${icon(f.state === 'fresh' ? 'leaf' : 'clock', 14)}${f.label}</span>`; };
+const whenWord = d => d === 0 ? 'today' : d === 1 ? 'tomorrow' : `in ${d} days`;
+const fmtDist = m => m < 1000 ? `${m} m` : `${(m / 1000).toFixed(1)} km`;
+const pctOff = d => Math.round((1 - d.now / d.was) * 100);
+const walkMins = m => Math.max(1, Math.round(m / 80));
+
+// --- Timers (tracked so Reset can cancel a scan or photo check in flight)
+function later(fn, ms) { const id = setTimeout(() => { timers = timers.filter(t => t !== id); fn(); }, ms); timers.push(id); return id; }
+
+// --- Icons: one small inline-SVG outline set
+const ICONS = {
+  home:   '<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  fridge: '<rect x="5" y="2" width="14" height="20" rx="2.5"/><path d="M5 10h14M9 5.5v2M9 13.5v3"/>',
+  tag:    '<path d="M12.6 2.6 21 11a2 2 0 0 1 0 2.8L13.8 21a2 2 0 0 1-2.8 0l-8.4-8.4A2 2 0 0 1 2 11.2V4a2 2 0 0 1 2-2h7.2a2 2 0 0 1 1.4.6z"/><circle cx="7.5" cy="7.5" r="1.3"/>',
+  bin:    '<path d="M4 7h16M9 7V4h6v3M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M10 11v6M14 11v6"/>',
+  trophy: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>',
+  scan:   '<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M8 9v6M11 9v6M14 9v6M16.5 9v6"/>',
+  plus:   '<path d="M12 5v14M5 12h14"/>',
+  camera: '<path d="M4 8h3l1.5-2.5h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/>',
+  pin:    '<path d="M12 21s7-6.1 7-11.5A7 7 0 0 0 5 9.5C5 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+  nav:    '<path d="M3 11.5 21 3l-8.5 18-2.2-7.3z"/>',
+  clock:  '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  flame:  '<path d="M12 22c4 0 7-2.8 7-6.8 0-3-1.8-5.2-3.3-7.2-.4 1.7-1.2 2.7-2.4 3.3C13.6 8 12.7 4.5 9.5 2c.3 3.2-1.2 5-2.6 6.8C5.7 10.4 5 12.3 5 15.2 5 19.2 8 22 12 22z"/>',
+  check:  '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  x:      '<path d="M6 6l12 12M18 6 6 18"/>',
+  chev:   '<path d="m9 5 7 7-7 7"/>',
+  list:   '<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
+  map:    '<path d="m3 6 6-2.5 6 2.5 6-2.5V18l-6 2.5-6-2.5-6 2.5z"/><path d="M9 3.5V18M15 6v14.5"/>',
+  lock:   '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  leaf:   '<path d="M5 19C5 10 10 5 20 4c0 10-4.5 15.5-13 15.5"/><path d="M4 21c2.5-5 6-8.5 10.5-11"/>',
+  star:   '<path d="m12 3 2.7 5.6 6.1.8-4.5 4.3 1.1 6.1L12 16.9l-5.4 2.9 1.1-6.1-4.5-4.3 6.1-.8z"/>',
+  play:   '<circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l5.5-3.5z"/>',
+  info:   '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.8v.01"/>',
+  walk:   '<circle cx="13" cy="4.5" r="1.8"/><path d="m9 21 2-6-2.5-2.5L10 8l3.5 1 2 3 3 1M13.5 21l-1-4.5"/>',
+  box:    '<path d="M3 8 12 3l9 5v8l-9 5-9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/>',
+  pot:    '<path d="M4 10h16v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4zM2 10h20M9 6c0-1 1-1 1-2M14 6c0-1 1-1 1-2"/>',
+  cloud:  '<path d="M7 18a4.5 4.5 0 0 1-.5-9 6 6 0 0 1 11.5 1.5A3.8 3.8 0 0 1 17.5 18z"/>',
+  wallet: '<path d="M4 6h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM4 6a2 2 0 0 1 2-2h10M16 13h.01"/>',
+};
+const icon = (name, size = 22) =>
+  `<svg class="ic" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
+
+// --- The loop ring: three arcs (eat, save, sort) on one circle.
+function ringSvg(done, { size = 122, fresh = [], light = false } = {}) {
+  const closed = done.eat && done.save && done.sort;
+  const arcs = LOOP.map((l, i) => {
+    const attrs = `cx="60" cy="60" r="50" pathLength="300" stroke-dasharray="80 220" stroke-dashoffset="${-(i * 100 + 10)}"`;
+    return `<circle class="ring-track" ${attrs}/>` + (done[l.key] ? `<circle class="ring-fill ${fresh.includes(l.key) ? 'is-fresh' : ''}" ${attrs}/>` : '');
+  }).join('');
+  return `<svg class="ring ${closed ? 'is-closed' : ''} ${light ? 'on-light' : ''}" width="${size}" height="${size}" viewBox="0 0 120 120" aria-hidden="true"><g transform="rotate(-90 60 60)">${arcs}</g></svg>`;
+}
+
+// --- Levels
+const levelIndex = xp => LEVELS.reduce((best, l, i) => (xp >= l.min ? i : best), 0);
+
+// --- Fridge and recipe derivations
+const sortedFridge = () => [...state.fridge].sort((a, b) => daysLeft(a) - daysLeft(b));
+function guessFood(name) {
+  const n = name.toLowerCase();
+  const key = Object.keys(FOODS).find(k => FOODS[k].alias.some(a => n.includes(a)));
+  if (key) return { key, icon: FOODS[key].icon, th: FOODS[key].th };
+  const hit = ICON_GUESS.find(([word]) => n.includes(word));
+  return { key: null, icon: hit ? hit[1] : '🥡', th: '' };
+}
+// For one recipe: which ingredients are in the fridge (not expired), which are missing, how many expire soon.
+function recipeInfo(r) {
+  const have = {};
+  sortedFridge().forEach(it => { if (it.key && daysLeft(it) >= 0 && !have[it.key]) have[it.key] = it; });
+  const ings = r.ings.map(g => {
+    const item = have[g.key] || null;
+    const d = item ? daysLeft(item) : null;
+    return { ...g, food: FOODS[g.key], item, d, near: item ? isNear(d) : false };
+  });
+  const near = ings.filter(g => g.near);
+  return {
+    ings, near,
+    have: ings.filter(g => g.item),
+    missing: ings.filter(g => !g.item),
+    soonest: Math.min(99, ...ings.filter(g => g.item).map(g => g.d)),
+  };
+}
+// Recipes that use near-expiry items come first, then the ones closest to expiry, then fewest missing.
+function rankedRecipes() {
+  return RECIPES.map(r => ({ r, info: recipeInfo(r) }))
+    .sort((a, b) => b.info.near.length - a.info.near.length || a.info.soonest - b.info.soonest || a.info.missing.length - b.info.missing.length);
+}
+const bestRecipeFor = key => (rankedRecipes().find(x => x.info.have.some(g => g.key === key)) || {}).r;
+
+// Today's mission: cook with the seeded target while it is still in the fridge, else the next expiring item.
+function missionTarget() {
+  const usable = sortedFridge().filter(it => it.key && isNear(daysLeft(it)) && bestRecipeFor(it.key));
+  return usable.find(it => it.key === state.mission.key) || usable[0] || null;
+}
+
+function filteredDeals() {
+  const f = state.filters;
+  return state.deals
+    .filter(d => (f.cat === 'all' || d.cat === f.cat) && (!f.dist || STORES[d.store].dist <= f.dist) && (!f.endingSoon || d.endsIn <= ENDING_SOON_MIN))
+    .sort((a, b) => STORES[a.store].dist - STORES[b.store].dist);
+}
+
+// A decorative, non-scannable QR-style pattern for the demo voucher.
+function fakeQr() {
+  const n = 21; let seed = 20;
+  const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  const finder = (x, y, ox, oy) => { const a = x - ox, b = y - oy; if (a < 0 || b < 0 || a > 6 || b > 6) return null; return a === 0 || b === 0 || a === 6 || b === 6 || (a > 1 && a < 5 && b > 1 && b < 5); };
+  let cells = '';
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const f = [finder(x, y, 0, 0), finder(x, y, 14, 0), finder(x, y, 0, 14)].find(v => v !== null);
+    const nearFinder = (x < 8 && y < 8) || (x > 12 && y < 8) || (x < 8 && y > 12);
+    const dark = f !== undefined ? f : (!nearFinder && rnd() > 0.5);
+    if (dark) cells += `<rect x="${x}" y="${y}" width="1" height="1"/>`;
+  }
+  return `<svg viewBox="0 0 ${n} ${n}" role="img" aria-label="Demo QR code, not scannable" fill="#14230E" shape-rendering="crispEdges">${cells}</svg>`;
+}
+
+// A drawn stand-in "photo" of a food-scrap bin, so the flow can be demoed without a camera.
+const SAMPLE_PHOTO = `<svg viewBox="0 0 400 300" role="img" aria-label="Sample photo: a green bin holding only food scraps" preserveAspectRatio="xMidYMid slice">
+  <rect width="400" height="300" fill="#D9D4C7"/><rect y="210" width="400" height="90" fill="#B9B2A2"/>
+  <path d="M120 110h160l-16 150a10 10 0 0 1-10 9H146a10 10 0 0 1-10-9z" fill="#4BA254"/><rect x="108" y="92" width="184" height="24" rx="8" fill="#2A6419"/>
+  <ellipse cx="200" cy="96" rx="76" ry="16" fill="#5B3A1E"/>
+  <circle cx="170" cy="90" r="13" fill="#E9B44C"/><circle cx="212" cy="86" r="11" fill="#C8553D"/><path d="M228 96c10-16 30-14 34-4-12 8-24 9-34 4z" fill="#7BB661"/><path d="M140 96c6-12 20-12 26-4-8 6-18 8-26 4z" fill="#F2E3B3"/>
+  <path d="M176 170c0-18 12-30 30-30 0 18-12 30-30 30zm0 0v24" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round"/>
+</svg>`;
+
+/* ============================== 4. RENDERING ========================= */
+
+// Re-render everything from state. Screens are small, so a full redraw keeps the code simple.
+function render() {
+  const screen = $('#screen');
+  const inApp = state.screen === 'app';
+  screen.innerHTML = inApp ? VIEWS[state.tab]() : viewOnboarding();
+  $('#tabbar').hidden = !inApp;
+  $('#tabbar').innerHTML = inApp ? TABS.map(t => `
+    <button class="tab" data-action="tab" data-tab="${t.id}" ${state.tab === t.id ? 'aria-current="page"' : ''}>
+      <span class="tab-ic">${icon(t.icon)}</span><span class="en">${t.en}</span><span class="th" lang="th">${t.th}</span>
+    </button>`).join('') : '';
+  renderOverlay();
+  renderGuide();
+
+  // One-shot animation flags: clear them once the screen that shows them has rendered.
+  if (inApp && state.tab === 'home') state.freshArcs = [];
+  if (inApp && state.tab === 'fridge' && state.fridgeView === 'items') state.fridge.forEach(it => { it.isNew = false; });
+  if (lastPoints !== null && lastPoints !== state.points) { const pill = $('.pts-pill'); if (pill) pill.classList.add('bump'); }
+  lastPoints = state.points;
+}
+
+const topbar = (eyebrow, title, th) => `
+  <header class="topbar">
+    <div><p class="eyebrow">${eyebrow}</p><h1>${title}${th ? ` <span class="th" lang="th">${th}</span>` : ''}</h1></div>
+    <div class="topbar-actions">
+      <button class="pts-pill" data-action="tab" data-tab="rewards" aria-label="${state.points} points. Open rewards">${icon('star', 16)}${state.points}</button>
+      <button class="icon-btn" data-action="open-demo" aria-label="Demo tools" title="Demo tools">${icon('play')}</button>
+    </div>
+  </header>`;
+const protoNote = `<p class="proto-note">Prototype. Scans, photo checks, maps, stores and partners are simulated. Figures are illustrative demo data.</p>`;
+
+// ---------- Onboarding: the problem (stats from the pitch), then the loop ----------
+function viewOnboarding() {
+  const step = state.obStep;
+  const ringArt = inner => `<svg viewBox="0 0 200 200" width="210" height="210" aria-hidden="true"><g transform="rotate(-90 100 100)" fill="none" stroke-width="22" stroke-linecap="butt">${inner}</g></svg>`;
+  const c = 'cx="100" cy="100" r="78" pathLength="100"';
+  const pages = [
+    `<div class="ob-art">${ringArt(`<circle ${c} stroke="rgba(255,255,255,.16)"/><circle ${c} stroke="#B9E08A" stroke-dasharray="49 51"/><circle ${c} stroke="#F6A609" stroke-dasharray="19.6 80.4"/>`)}
+       <div class="center"><span class="big">5,700+</span><span class="small">tons a day</span></div></div>
+     <h1>Bangkok bins over 5,700 tons of food every day.</h1>
+     <ul class="ob-legend">
+       <li><i class="sw" style="background:#B9E08A"></i><div><b>Nearly 50%</b><br>of the city's trash is organic food waste.</div></li>
+       <li><i class="sw" style="background:#F6A609"></i><div><b>40% of it</b><br>is still perfectly edible.</div></li>
+     </ul>`,
+    `<div class="ob-art">${ringArt(`<circle ${c} stroke="rgba(255,255,255,.16)" stroke-dasharray="2 2"/><circle ${c} stroke="#B9E08A" stroke-dasharray="76 24" stroke-dashoffset="-12" stroke-linecap="round"/>`)}
+       <div class="center"><span class="small">intention</span><span class="big" style="font-size:30px">the gap</span><span class="small">action</span></div></div>
+     <h1>We care the most. We still waste more.</h1>
+     <p>Gen Y and Gen Z worry most about climate change, yet throw away more household food than older generations.</p>
+     <p>Food banks catch waste at the end of the line. Posters raise awareness. Neither gives you a reason to act today.</p>`,
+    `<div class="ob-art">${ringSvg({ eat: true, save: true, sort: true }, { size: 210, fresh: ['eat', 'save', 'sort'] })}
+       <div class="center"><span class="big" style="font-size:28px">FoodLoop</span><span class="small">BKK</span></div></div>
+     <h1>Close the loop, one day at a time.</h1>
+     <ul class="ob-steps">${LOOP.map(l => `<li><span class="tile">${icon(l.icon)}</span><div><b>${l.phase}</b><span>${l.blurb}</span></div></li>`).join('')}</ul>`,
+  ];
+  const last = step === pages.length - 1;
+  return `
+  <section class="ob on-dark" aria-label="Introduction, ${step + 1} of ${pages.length}">
+    <div class="ob-top">
+      <span class="ob-brand">${ringSvg({ eat: true, save: true, sort: true }, { size: 22 })}FoodLoopBKK</span>
+      ${last ? '' : '<button class="ob-skip" data-action="ob-skip">Skip</button>'}
+    </div>
+    <div class="ob-body">${pages[step]}</div>
+    <div class="ob-foot">
+      <div class="ob-dots" aria-hidden="true">${pages.map((_, i) => `<i class="${i === step ? 'on' : ''}"></i>`).join('')}</div>
+      ${step > 0 ? '<button class="btn btn-ghost" style="color:#fff" data-action="ob-back">Back</button>' : ''}
+      <button class="btn btn-light" data-action="ob-next">${last ? 'Start my loop' : 'Next'}${icon('chev', 18)}</button>
+    </div>
+    <p class="ob-note">Figures on these screens come from the pitch brief. Everything inside the app is mock demo data.</p>
+  </section>`;
+}
+
+// ---------- Home ----------
+function viewHome() {
+  const doneCount = LOOP.filter(l => state.loop[l.key]).length;
+  const closed = doneCount === 3;
+  const soon = sortedFridge().filter(it => { const d = daysLeft(it); return d >= 0 && d <= 3; }).slice(0, 3);
+  const deal = state.deals.filter(d => !d.navigated).sort((a, b) => STORES[a.store].dist - STORES[b.store].dist)[0];
+  const target = missionTarget();
+  const mRecipe = target && bestRecipeFor(target.key);
+
+  const mission = state.mission.done
+    ? `<section class="card mission is-done"><p class="eyebrow">${icon('check', 16)}Daily mission complete</p><h2>Nice. That food stayed out of the bin.</h2><p class="meta">+${POINTS.mission} bonus points added.</p></section>`
+    : target
+      ? `<section class="card mission">
+           <p class="eyebrow">${icon('star', 16)}Daily mission · <span lang="th">ภารกิจวันนี้</span></p>
+           <h2>Cook something with the ${esc(target.name.toLowerCase())} expiring ${whenWord(daysLeft(target))}</h2>
+           <p class="meta" style="color:var(--amber-900)">+${POINTS.mission} bonus points. ${esc(mRecipe.name)} takes ${mRecipe.mins} min.</p>
+           <button class="btn btn-primary btn-block" data-action="open-recipe" data-id="${mRecipe.id}">${icon('pot', 20)}See the recipe</button>
+         </section>`
+      : `<section class="card mission">
+           <p class="eyebrow">${icon('star', 16)}Daily mission · <span lang="th">ภารกิจวันนี้</span></p>
+           <h2>Rescue one surplus deal near you</h2>
+           <button class="btn btn-primary btn-block" data-action="tab" data-tab="deals">${icon('tag', 20)}Browse deals</button>
+         </section>`;
+
+  return `<div class="view">
+    <header class="topbar">
+      <div><p class="brand">${ringSvg({ eat: true, save: true, sort: true }, { size: 20, light: true })}FoodLoopBKK</p><h1><span lang="th">สวัสดี</span>, Ploy</h1></div>
+      <div class="topbar-actions">
+        <button class="pts-pill" data-action="tab" data-tab="rewards" aria-label="${state.points} points. Open rewards">${icon('star', 16)}${state.points}</button>
+        <button class="icon-btn" data-action="open-demo" aria-label="Demo tools" title="Demo tools">${icon('play')}</button>
+      </div>
+    </header>
+
+    <section class="card loop-card on-dark" aria-label="Today's loop">
+      <div class="loop-top">
+        <div class="ring-wrap">${ringSvg(state.loop, { fresh: state.freshArcs })}
+          <div class="ring-center"><b><span class="flame">${icon('flame', 24)}</span>${state.streak}</b><small>day streak</small></div>
+        </div>
+        <div class="loop-copy">
+          <h2>${closed ? 'Loop closed today' : doneCount ? `${doneCount} of 3 closed` : "Close today's loop"}</h2>
+          <ul class="loop-list">${LOOP.map(l => `
+            <li><button class="${state.loop[l.key] ? 'is-done' : ''}" data-action="tab" data-tab="${l.tab}" aria-label="${l.label}${state.loop[l.key] ? ', done' : ''}">
+              <i class="check">${state.loop[l.key] ? icon('check', 16) : ''}</i><span>${l.label}</span><i class="go">${icon('chev', 16)}</i></button></li>`).join('')}
+          </ul>
+        </div>
+      </div>
+      <div class="loop-money"><b>${baht(state.stats.money)}</b><span>saved this month</span></div>
+    </section>
+
+    ${mission}
+
+    <section>
+      <div class="section-head"><h2>Use it soon</h2><button class="link" data-action="fridge-view" data-view="recipes">All recipes${icon('chev', 16)}</button></div>
+      ${soon.length ? `<div class="soon-strip">${soon.map(it => { const r = bestRecipeFor(it.key); return `
+        <button class="soon-card" data-action="${r ? 'open-recipe' : 'tab'}" data-id="${r ? r.id : ''}" data-tab="fridge">
+          <span class="emoji" aria-hidden="true">${it.icon}</span><b>${esc(it.name)}</b>${pillFor(daysLeft(it))}
+          <span class="cook">${r ? `${icon('pot', 16)}${esc(r.name)}` : `${icon('fridge', 16)}Open fridge`}</span>
+        </button>`; }).join('')}</div>`
+      : `<div class="card empty"><b>Nothing urgent</b>Your fridge is in good shape today.</div>`}
+    </section>
+
+    ${deal ? `<section>
+      <div class="section-head"><h2>Near you</h2><button class="link" data-action="tab" data-tab="deals">All deals${icon('chev', 16)}</button></div>
+      <button class="card deal-top" style="width:100%" data-action="tab" data-tab="deals">
+        <span class="tile" aria-hidden="true">${deal.icon}</span>
+        <span class="deal-body"><b>${esc(deal.name)}</b><span class="meta">${STORES[deal.store].name} · ${fmtDist(STORES[deal.store].dist)}</span>
+          <span class="price"><span class="now">${baht(deal.now)}</span><span class="was">${baht(deal.was)}</span></span></span>
+        <span class="off">−${pctOff(deal)}%</span>
+      </button></section>` : ''}
+
+    ${protoNote}
+  </div>`;
+}
+
+// ---------- Fridge: inventory and recipes ----------
+function viewFridge() {
+  const items = sortedFridge();
+  const attention = items.filter(it => daysLeft(it) <= NEAR_DAYS).length;
+  const recipes = rankedRecipes();
+
+  let lastGroup = '';
+  const list = items.map(it => {
+    const d = daysLeft(it), f = freshness(d);
+    const head = f.group !== lastGroup ? `<p class="group-label">${f.group}</p>` : '';
+    lastGroup = f.group;
+    const act = f.state === 'expired'
+      ? `<button class="item-act" data-action="bin-item" data-id="${it.id}" aria-label="Sort ${esc(it.name)} as organic waste">${icon('bin')}</button>`
+      : `<button class="item-act" data-action="use-item" data-id="${it.id}" aria-label="Mark ${esc(it.name)} as used">${icon('check')}</button>`;
+    return `${head}<article class="card item is-${f.state} ${it.isNew ? 'is-new' : ''}">
+      <span class="tile" aria-hidden="true">${it.icon}</span>
+      <div class="item-body"><span class="item-name">${esc(it.name)} ${it.th ? `<span class="th" lang="th">${it.th}</span>` : ''}</span>
+        <span class="meta">${esc(it.qty)}</span>${pillFor(d)}</div>${act}
+    </article>`;
+  }).join('');
+
+  const recipeList = recipes.map(({ r, info }) => `
+    <button class="card recipe-card" data-action="open-recipe" data-id="${r.id}">
+      <span class="tile" aria-hidden="true">${r.icon}</span>
+      <span class="recipe-body">
+        <span class="recipe-title"><b>${r.name}</b><span class="meta">${r.mins} min</span></span>
+        ${info.near.length ? `<span class="pill pill-amber">${icon('flame', 14)}Uses ${plural(info.near.length, 'item')} expiring soon</span>` : ''}
+        <span class="ing-chips">
+          ${info.have.map(g => `<span class="ing ing-have">${icon('check', 12)}${g.food.name}</span>`).join('')}
+          ${info.missing.map(g => `<span class="ing ing-miss">${icon('plus', 12)}${g.food.name}</span>`).join('')}
+        </span>
+      </span>
+    </button>`).join('');
+
+  return `<div class="view">
+    ${topbar('Before you eat', 'Fridge', 'ตู้เย็น')}
+    <p class="meta" style="margin-top:-10px">${plural(items.length, 'item')} · ${attention ? `${attention} need attention` : 'nothing urgent'}</p>
+    <div class="action-row">
+      <button class="btn btn-primary" data-action="open-scan">${icon('scan', 20)}Scan receipt</button>
+      <button class="btn btn-secondary" data-action="open-add">${icon('plus', 20)}Add item</button>
+    </div>
+    <div class="seg" role="group" aria-label="Fridge view">
+      <button data-action="fridge-view" data-view="items" aria-pressed="${state.fridgeView === 'items'}">Items (${items.length})</button>
+      <button data-action="fridge-view" data-view="recipes" aria-pressed="${state.fridgeView === 'recipes'}">Recipes (${recipes.length})</button>
+    </div>
+    ${state.fridgeView === 'items'
+      ? (items.length ? list : `<div class="card empty"><b>Your fridge is empty</b>Scan a receipt or add an item to start tracking.</div>`)
+      : `<p class="meta">Sorted by what expires first. ${icon('check', 12).replace('class="ic"', 'class="ic" style="display:inline;vertical-align:-1px"')} in your fridge, ${icon('plus', 12).replace('class="ic"', 'class="ic" style="display:inline;vertical-align:-1px"')} to buy.</p>${recipeList}`}
+    ${protoNote}
+  </div>`;
+}
+
+// ---------- Deals: surplus marketplace, pickup only ----------
+function mapSvg(route) {
+  return `<svg viewBox="0 0 100 72" preserveAspectRatio="none" aria-hidden="true">
+    <rect width="100" height="72" fill="#EAF1E2"/>
+    <rect x="44" y="22" width="18" height="14" rx="3" fill="#CFE6BC"/><rect x="18" y="44" width="18" height="12" rx="3" fill="#DCEBCF"/>
+    <path d="M0 30C18 26 30 50 54 48s34-18 46-14" stroke="#CFE2E6" stroke-width="5" fill="none"/>
+    <g stroke="#fff" stroke-width="3.2" stroke-linecap="round"><path d="M0 18h100M0 40h100M0 60h100M14 0v72M40 0v72M66 0v72M88 0v72"/></g>
+    ${route ? `<path class="route" d="${route}"/>` : ''}
+  </svg>`;
+}
+const pos = p => `left:${p.x}%;top:${(p.y / 72) * 100}%`;
+
+function dealCard(d) {
+  const s = STORES[d.store], soon = d.endsIn <= ENDING_SOON_MIN;
+  return `<article class="card deal-card">
+    <div class="deal-top">
+      <span class="tile" aria-hidden="true">${d.icon}</span>
+      <div class="deal-body"><b>${esc(d.name)}</b><span class="meta">${s.name} · ${s.type}</span>
+        <div class="price"><span class="now">${baht(d.now)}</span><span class="was"><span class="sr-only">was </span>${baht(d.was)}</span></div></div>
+      <span class="off" aria-label="${pctOff(d)} percent off">−${pctOff(d)}%</span>
+    </div>
+    <div class="facts">
+      <span>${icon('pin', 16)}${fmtDist(s.dist)}</span><span>${icon('clock', 16)}Pickup ${d.pickup}</span><span>${icon('box', 16)}${d.left} left</span>
+      ${soon ? `<span class="pill pill-soon">Ends in ${d.endsIn} min</span>` : ''}
+    </div>
+    ${d.navigated
+      ? `<div class="saved-row">${icon('check', 18)}Pickup planned · you save ${baht(d.was - d.now)}</div>
+         <button class="btn btn-secondary btn-block" data-action="navigate" data-id="${d.id}">${icon('nav', 18)}View directions</button>`
+      : `<button class="btn btn-primary btn-block btn-nav" data-action="navigate" data-id="${d.id}">${icon('nav', 18)}Navigate to store</button>`}
+  </article>`;
+}
+
+function viewDeals() {
+  const f = state.filters, deals = filteredDeals();
+  const filtersOn = f.cat !== 'all' || f.dist || f.endingSoon;
+  const empty = `<div class="card empty"><b>No deals match these filters</b>Try a wider distance or another category.
+    <div style="margin-top:12px"><button class="btn btn-secondary btn-sm" data-action="clear-filters">Clear filters</button></div></div>`;
+
+  let body;
+  if (state.dealsView === 'list') {
+    body = deals.length ? deals.map(dealCard).join('') : empty;
+  } else {
+    const storeIds = [...new Set(deals.map(d => d.store))];
+    const sel = storeIds.includes(state.mapStore) ? state.mapStore : storeIds[0];
+    body = `<div class="map">${mapSvg()}
+        <i class="you" style="${pos(YOU)}"></i><span class="you-label" style="${pos(YOU)}">You</span>
+        ${storeIds.map(id => { const best = Math.max(...deals.filter(d => d.store === id).map(pctOff)); return `
+          <button class="pin" style="${pos(STORES[id])}" data-action="map-pin" data-store="${id}" aria-pressed="${id === sel}"
+            aria-label="${STORES[id].name}, ${fmtDist(STORES[id].dist)}, up to ${best} percent off"><span>−${best}%</span></button>`; }).join('')}
+        <span class="map-tag">Illustrative map, not to scale</span>
+      </div>
+      ${sel ? `<div class="section-head" style="margin:0"><h2>${STORES[sel].name}</h2><span class="meta">${fmtDist(STORES[sel].dist)}</span></div>
+        ${deals.filter(d => d.store === sel).map(dealCard).join('')}` : empty}`;
+  }
+
+  return `<div class="view">
+    ${topbar('Before you waste', 'Deals', 'ดีล')}
+    <p class="meta" style="margin-top:-10px">Good food at 40–60% off before closing time. Pick up and pay at the store.</p>
+    <div class="seg" role="group" aria-label="Deals view">
+      <button data-action="deals-view" data-view="list" aria-pressed="${state.dealsView === 'list'}">${icon('list', 18)}List</button>
+      <button data-action="deals-view" data-view="map" aria-pressed="${state.dealsView === 'map'}">${icon('map', 18)}Map</button>
+    </div>
+    <div class="chips" role="group" aria-label="Category">${CATEGORIES.map(([id, label]) =>
+      `<button class="chip" data-action="filter-cat" data-cat="${id}" aria-pressed="${f.cat === id}">${label}</button>`).join('')}</div>
+    <div class="chips" role="group" aria-label="Distance and timing">
+      <button class="chip" data-action="filter-ending" aria-pressed="${f.endingSoon}">${icon('clock', 16)}Ending soon</button>
+      ${DISTANCES.map(([m, label]) => `<button class="chip" data-action="filter-dist" data-dist="${m}" aria-pressed="${f.dist === m}">${label}</button>`).join('')}
+    </div>
+    <p class="meta" aria-live="polite">${plural(deals.length, 'deal')}${filtersOn ? ' match your filters' : ' near you'} · store names are fictional</p>
+    ${body}
+    ${protoNote}
+  </div>`;
+}
+
+// ---------- Dispose: Mai Thay Ruam photo proof ----------
+function viewDispose() {
+  const d = state.dispose;
+  const stepNow = { idle: 0, photo: 1, rejected: 1, checking: 2, success: 4 }[d.status];
+  const steps = ['Separate', 'Photo', 'Verify', `${baht(FEE_THB)} fee`];
+  const photo = d.photo === 'sample' ? SAMPLE_PHOTO : d.photo ? `<img src="${d.photo}" alt="Your photo of separated organic waste">` : '';
+
+  const cards = {
+    idle: `
+      <h3>Separate your food scraps first</h3>
+      <div class="sort-guide">
+        <div class="yes"><b>${icon('check', 18)}Organic bin</b>Food scraps, peels, bones, leftovers</div>
+        <div class="no"><b>${icon('x', 18)}Keep out</b>Plastic, packaging, tissue, glass</div>
+      </div>
+      <p class="meta">Then show us the bin or bag. One clear photo is enough.</p>
+      <label class="btn btn-primary btn-block dispose-cta">${icon('camera', 20)}Take or upload a photo
+        <input class="sr-only" type="file" accept="image/*" capture="environment" data-change="photo"></label>
+      <button class="btn btn-ghost btn-block" data-action="sample-photo">Use a sample photo</button>`,
+    photo: `
+      <h3>Looks good? Send it for checking</h3>
+      <div class="photo">${photo}</div>
+      <button class="btn btn-primary btn-block dispose-cta" data-action="verify">${icon('check', 20)}Verify this photo</button>
+      <button class="btn btn-ghost btn-block" data-action="retake">Choose another photo</button>`,
+    checking: `
+      <h3>Checking your photo</h3>
+      <div class="photo is-checking">${photo}</div>
+      <p class="status-row" role="status"><i class="spinner"></i>Looking for separated organic waste…</p>`,
+    rejected: `
+      <h3>This photo didn't pass</h3>
+      <div class="alert" role="alert">${icon('info', 20)}<div><b>We couldn't see separated organic waste.</b>Keep food scraps in their own bin or bag with no plastic mixed in, fill the frame, then try again.</div></div>
+      <label class="btn btn-primary btn-block dispose-cta">${icon('camera', 20)}Try again with a new photo
+        <input class="sr-only" type="file" accept="image/*" capture="environment" data-change="photo"></label>
+      <button class="btn btn-ghost btn-block" data-action="sample-photo">Use a sample photo</button>`,
+  };
+
+  const voucher = `
+    <section class="ticket" aria-label="Discounted collection fee voucher">
+      <div class="ticket-head"><span lang="th">ไม่เทรวม</span><span style="font-size:14px">${icon('check', 16).replace('class="ic"', 'class="ic" style="display:inline;vertical-align:-2px"')} Photo verified</span></div>
+      <div class="ticket-main">
+        <div class="fee">${FEE_THB}<small> THB</small></div>
+        <div><b>Discounted waste collection fee</b><p>Unlocked because you sort organic waste.</p></div>
+      </div>
+      <div class="ticket-cut"></div>
+      <div class="ticket-qr">${fakeQr()}
+        <div><p class="code">MTR-DEMO-2049</p><p class="meta">Show this code when the fee is collected.</p><p class="meta"><b>Prototype voucher.</b> Not valid for payment.</p></div>
+      </div>
+    </section>
+    <button class="btn btn-primary btn-block" data-action="tab" data-tab="rewards">${icon('trophy', 20)}See what you earned</button>`;
+
+  return `<div class="view">
+    ${topbar('When you dispose', 'Dispose', 'ไม่เทรวม')}
+    <section class="card">
+      <div class="bma-head">
+        <h2><span lang="th">ไม่เทรวม</span> · Mai Thay Ruam</h2>
+        <p>Bangkok's waste-sorting initiative. Prove you separate organic waste and unlock the discounted ${baht(FEE_THB)} collection fee.</p>
+      </div>
+      <span class="proto-tag">${icon('info', 14)}Prototype integration · not connected to BMA systems</span>
+    </section>
+    <ol class="stepper" aria-label="Steps">${steps.map((s, i) =>
+      `<li class="${i < stepNow ? 'is-done' : i === stepNow ? 'is-now' : ''}"${i === stepNow ? ' aria-current="step"' : ''}>${i + 1}. ${s}</li>`).join('')}</ol>
+    ${d.status === 'success' ? voucher : `<section class="card dispose-card">${cards[d.status]}</section>`}
+    ${d.status === 'success' || d.status === 'checking' ? '' : `
+      <label class="presenter-toggle"><input type="checkbox" data-change="force-fail" ${d.forceFail ? 'checked' : ''}>Presenter: make the next check fail</label>`}
+    ${protoNote}
+  </div>`;
+}
+
+// ---------- Rewards: metrics, streak, levels, perks ----------
+function viewRewards() {
+  const li = levelIndex(state.xp), level = LEVELS[li], next = LEVELS[li + 1];
+  const pct = next ? Math.round(((state.xp - level.min) / (next.min - level.min)) * 100) : 100;
+  const co2 = (state.stats.kg * CO2E_PER_KG).toFixed(1);
+  const dayLetters = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const week = [...state.pastWeek, state.todayDone].map((done, i) => {
+    const date = addDays(i - 6), isToday = i === 6;
+    return `<li class="${done ? 'is-done' : ''} ${isToday ? 'is-today' : ''}" aria-label="${date.toLocaleDateString('en-US', { weekday: 'long' })}${isToday ? ', today' : ''}: ${done ? 'done' : 'no action'}">
+      <span class="dot">${done ? icon('flame', 18) : ''}</span>${isToday ? 'Today' : dayLetters[date.getDay()]}</li>`;
+  }).join('');
+
+  const perks = PERKS.map(p => {
+    const code = state.redeemed[p.id], can = state.points >= p.cost;
+    const stateEl = code
+      ? `<button class="btn btn-secondary btn-sm" data-action="open-perk" data-id="${p.id}">${icon('check', 16)}Redeemed</button>`
+      : can
+        ? `<button class="btn btn-primary btn-sm" data-action="open-perk" data-id="${p.id}">Redeem</button>`
+        : `<span class="locked-label">${icon('lock', 16)}${p.cost - state.points} more</span>`;
+    return `<article class="card perk ${code ? 'is-redeemed' : can ? '' : 'is-locked'}">
+      <span class="tile" aria-hidden="true">${p.icon}</span>
+      <div class="perk-body"><b>${p.name}</b><span class="meta">${p.partner}<br>${p.cost} pts</span></div>
+      <div class="perk-state">${stateEl}</div></article>`;
+  }).join('');
+
+  return `<div class="view">
+    ${topbar('Your habit loop', 'Rewards', 'รางวัล')}
+    <section class="card level-card">
+      <div class="level-top">
+        <span class="tile" aria-hidden="true">${level.icon}</span>
+        <div><p class="meta">Level ${li + 1} of ${LEVELS.length}</p><h2>${level.name}</h2></div>
+        <div class="balance"><b>${state.points}</b><span class="meta">points to spend</span></div>
+      </div>
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="Progress to next level"><i style="width:${pct}%"></i></div>
+      <p class="meta">${next ? `${state.xp} of ${next.min} points earned · ${next.min - state.xp} to ${next.name}` : `${state.xp} points earned · top level reached`}</p>
+      <ol class="level-track">${LEVELS.map((l, i) => `<li class="${i <= li ? 'is-on' : ''}"><span class="emo" aria-hidden="true">${l.icon}</span>${l.name}</li>`).join('')}</ol>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>Your impact this month</h2></div>
+      <div class="metrics">
+        <div class="card metric">${icon('wallet')}<b>${baht(state.stats.money)}</b><span>Money saved</span></div>
+        <div class="card metric">${icon('leaf')}<b>${state.stats.kg.toFixed(1)}<small> kg</small></b><span>Food saved</span></div>
+        <div class="card metric">${icon('cloud')}<b>${co2}<small> kg</small></b><span>CO₂e avoided, estimate</span></div>
+        <div class="card metric">${icon('box')}<b>${state.stats.items}</b><span>Items rescued</span></div>
+      </div>
+      <p class="meta" style="margin-top:8px">Illustrative demo data. CO₂e uses a placeholder factor of ${CO2E_PER_KG} kg per kg of food.</p>
+    </section>
+
+    <section class="card">
+      <div class="streak-head"><span class="flame">${icon('flame', 30)}</span><b>${state.streak}</b><span>day eco-streak<br><span class="meta">${state.todayDone ? 'Today is counted.' : 'Do one action today to extend it.'}</span></span></div>
+      <ol class="week">${week}</ol>
+      <p class="meta" style="margin-top:10px">Logging food, cooking, a deal pickup or a verified sort all count.</p>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>Perks</h2><span class="meta">fictional partners</span></div>
+      <div style="display:grid;gap:10px">${perks}</div>
+    </section>
+
+    <section class="card">
+      <div class="section-head" style="margin-bottom:0"><h2>Recent activity</h2></div>
+      <ul class="log">${state.log.slice(0, 6).map(e => `<li><span aria-hidden="true">${e.icon}</span><div>${esc(e.text)}<br><span class="when">${e.when}</span></div><span class="pts">+${e.pts}</span></li>`).join('')}</ul>
+    </section>
+    ${protoNote}
+  </div>`;
+}
+
+const VIEWS = { home: viewHome, fridge: viewFridge, deals: viewDeals, dispose: viewDispose, rewards: viewRewards };
+
+// ---------- Overlays ----------
+const sheetHead = (title, th = '') => `
+  <div class="sheet-head"><h2 id="sheetTitle">${title}${th ? `<span class="th" lang="th">${th}</span>` : ''}</h2>
+    <button class="close" data-action="close-overlay" aria-label="Close">${icon('x')}</button></div>`;
+const sheet = (inner, cls = '') => `<div class="overlay"><div class="sheet ${cls}" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" tabindex="-1">${inner}</div></div>`;
+
+function ovScan(o) {
+  const lines = RECEIPT.items.map(([key, , , price]) => `<div class="row"><span>${FOODS[key].name}</span><span>${price}.00</span></div>`).join('');
+  const found = o.phase === 'found' ? `
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" tabindex="-1">
+      ${sheetHead(`${RECEIPT.items.length} items found`)}
+      <p class="meta" style="margin-top:-10px">${RECEIPT.store} · expiry dates are typical shelf-life estimates</p>
+      <ul class="found">${RECEIPT.items.map(([key, qty, days]) => `<li><span class="emoji" aria-hidden="true">${FOODS[key].icon}</span><div><b>${FOODS[key].name}</b><br><span class="meta">${qty}</span></div><span class="right">${pillFor(days)}</span></li>`).join('')}</ul>
+      ${state.scanned
+        ? `<button class="btn btn-primary btn-block" disabled>Already in your fridge</button>`
+        : `<button class="btn btn-primary btn-block" data-action="scan-confirm">${icon('plus', 20)}Add ${RECEIPT.items.length} items to fridge</button>`}
+    </div>` : '';
+  return `<div class="scan on-dark">
+    <div class="scan-top"><b>Scan receipt</b><button class="close" data-action="close-overlay" aria-label="Close scanner">${icon('x')}</button></div>
+    <div class="viewfinder" aria-hidden="true">
+      <div class="receipt"><b>${RECEIPT.store.toUpperCase()}</b><div class="row"><span>RECEIPT</span><span>#000482</span></div>${lines}<div class="barcode"></div></div>
+      <div class="frame"></div>${o.phase === 'scanning' ? '<div class="scanline"></div>' : ''}
+    </div>
+    <div class="scan-status" role="status">${o.phase === 'scanning' ? '<b>Reading the barcode…</b><span>Simulated scan with a demo receipt. No camera is used.</span>' : ''}</div>
+    ${found}
+  </div>`;
+}
+
+function ovAdd() {
+  return sheet(`
+    ${sheetHead('Add an item')}
+    <form data-submit="add-item" novalidate style="display:grid;gap:16px">
+      <div class="field"><label for="fName">Item name</label>
+        <input id="fName" name="name" type="text" autocomplete="off" placeholder="e.g. Kimchi" aria-describedby="fNameErr" required>
+        <p class="error" id="fNameErr" role="alert"></p></div>
+      <div class="field"><label for="fQty">Quantity</label>
+        <input id="fQty" name="qty" type="text" autocomplete="off" value="1 pack">
+        <p class="hint">Any unit works: 2 pcs, 500 g, 1 pack.</p></div>
+      <div class="field"><label for="fDate">Expiry date</label>
+        <input id="fDate" name="date" type="date" value="${iso(addDays(3))}" min="${iso(today())}" aria-describedby="fDateErr" required>
+        <div class="chips" role="group" aria-label="Quick expiry dates">
+          ${[[0, 'Today'], [3, '+3 days'], [7, '+1 week'], [14, '+2 weeks']].map(([n, label]) =>
+            `<button type="button" class="chip" data-action="date-chip" data-days="${n}" aria-pressed="${n === 3}">${label}</button>`).join('')}
+        </div>
+        <p class="error" id="fDateErr" role="alert"></p></div>
+      <button class="btn btn-primary btn-block" type="submit">${icon('plus', 20)}Add to fridge</button>
+    </form>`);
+}
+
+function ovRecipe(o) {
+  const r = RECIPES.find(x => x.id === o.id), info = recipeInfo(r);
+  return sheet(`
+    ${sheetHead(r.name, r.th)}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:-6px">
+      <span class="pill pill-outline">${icon('clock', 14)}${r.mins} min</span>
+      ${info.near.length ? `<span class="pill pill-amber">${icon('flame', 14)}Uses ${plural(info.near.length, 'item')} expiring soon</span>` : ''}
+    </div>
+    <div><h3 style="font-size:17px;margin-bottom:2px">Ingredients</h3>
+      <ul class="ing-list">${info.ings.map(g => `
+        <li class="${g.item ? '' : 'is-miss'}"><span class="mark">${icon(g.item ? 'check' : 'plus', 14)}</span>
+          <span>${g.food.name} <span class="meta" lang="th">${g.food.th}</span></span>
+          <span class="right">${g.item ? pillFor(g.d) : '<span class="meta">Not in fridge</span>'}</span></li>`).join('')}
+      </ul>
+      <p class="meta" style="margin-top:6px">From the pantry: ${r.pantry}.</p></div>
+    <div><h3 style="font-size:17px;margin-bottom:8px">Method</h3><ol class="steps">${r.steps.map(s => `<li>${s}</li>`).join('')}</ol></div>
+    ${info.have.length
+      ? `<button class="btn btn-primary btn-block" data-action="cook" data-id="${r.id}">${icon('pot', 20)}Cooked this</button>`
+      : `<button class="btn btn-primary btn-block" disabled>Cooked this</button><p class="meta" style="text-align:center">None of these ingredients are in your fridge yet.</p>`}
+  `);
+}
+
+function ovCooked(o) {
+  return sheet(`
+    <div class="win"><span class="emoji" aria-hidden="true">${o.icon}</span>
+      <h2 id="sheetTitle">${esc(o.name)} cooked</h2>
+      <p class="meta">${o.rescued.length ? `Rescued just in time: ${o.rescued.map(esc).join(', ').toLowerCase()}.` : 'Used from your fridge, nothing wasted.'}</p>
+      <div class="win-stats">
+        <div><b>${baht(o.money)}</b><span>saved</span></div>
+        <div><b>${o.rescued.length}</b><span>${o.rescued.length === 1 ? 'item' : 'items'} rescued</span></div>
+        <div><b>+${o.pts}</b><span>points</span></div>
+      </div>
+      ${o.mission ? `<p class="banner-amber" style="width:100%;justify-content:center">${icon('star', 18)}Daily mission complete, +${POINTS.mission} included</p>` : ''}
+      ${o.levelUp ? `<p class="banner-amber" style="width:100%;justify-content:center">${o.levelUp.icon} Level up: you're now a ${o.levelUp.name}</p>` : ''}
+    </div>
+    <button class="btn btn-primary btn-block" data-action="close-overlay">Done</button>`);
+}
+
+function ovDirections(o) {
+  const d = state.deals.find(x => x.id === o.id), s = STORES[d.store];
+  const route = `M${YOU.x} ${YOU.y}H${s.x}V${s.y}`;
+  const a = Math.round(s.dist * 0.4 / 10) * 10, b = s.dist - a;
+  return sheet(`
+    ${sheetHead(`Directions to ${s.name}`)}
+    <p class="banner-amber">${icon('wallet', 22)}<span>You save <b>${baht(d.was - d.now)}</b><br><span style="font-weight:500">${o.first ? 'Added to your money saved.' : 'Already counted in your money saved.'}</span></span></p>
+    <div class="map">${mapSvg(route)}
+      <i class="you" style="${pos(YOU)}"></i><span class="you-label" style="${pos(YOU)}">You</span>
+      <span class="pin is-static" style="${pos(s)}"><span>${icon('pin', 16)}</span></span>
+      <span class="map-tag">Illustrative route, not to scale</span>
+    </div>
+    <div class="facts" style="font-size:15px">
+      <span>${icon('walk', 18)}${fmtDist(s.dist)} · about ${walkMins(s.dist)} min walk</span>
+      <span>${icon('clock', 18)}Pickup ${d.pickup}</span>
+    </div>
+    <ol class="steps">
+      <li>Walk ${a} m along Soi Loop.</li>
+      <li>Turn at the corner and continue ${b} m.</li>
+      <li>${s.name} is on your left. Ask for "${esc(d.name)}" and pay ${baht(d.now)} at the counter.</li>
+    </ol>
+    <p class="meta">Pickup only. You pay the store directly, so there is nothing to check out here.</p>
+    <button class="btn btn-primary btn-block" data-action="close-overlay">Got it</button>`, 'is-full');
+}
+
+function ovPerk(o) {
+  const p = PERKS.find(x => x.id === o.id), code = state.redeemed[p.id];
+  return sheet(code ? `
+    <div class="win"><span class="emoji" aria-hidden="true">${p.icon}</span><h2 id="sheetTitle">${p.name}</h2>
+      <p class="meta">Redeemed with ${p.partner}. Show this code to claim it.</p>
+      <p class="code" style="font-size:22px;background:var(--green-50);border-radius:14px;padding:10px 18px">${code}</p>
+      <p class="meta">Demo code. Partners are fictional.</p></div>
+    <button class="btn btn-primary btn-block" data-action="close-overlay">Done</button>` : `
+    ${sheetHead('Redeem this perk?')}
+    <div class="perk" style="padding:0"><span class="tile" aria-hidden="true">${p.icon}</span><div class="perk-body"><b>${p.name}</b><span class="meta">${p.partner}</span></div></div>
+    <p>This uses <b>${p.cost} points</b>. You'll have ${state.points - p.cost} left. Your level stays the same.</p>
+    <button class="btn btn-primary btn-block" data-action="redeem" data-id="${p.id}">Redeem for ${p.cost} points</button>
+    <button class="btn btn-ghost btn-block" data-action="close-overlay">Not now</button>`);
+}
+
+function ovDemo() {
+  return sheet(`
+    ${sheetHead('Demo tools')}
+    <p class="meta" style="margin-top:-10px">For the presenter. The guide walks Fridge, Deals, Dispose and Rewards in order.</p>
+    <button class="btn btn-primary btn-block" data-action="guide-start">${icon('play', 20)}${state.guide.active ? 'Restart demo guide' : 'Start demo guide'}</button>
+    <button class="btn btn-secondary btn-block" data-action="replay-intro">Replay the intro</button>
+    <button class="btn btn-secondary btn-block" data-action="reset">Reset demo</button>
+    <p class="meta">Everything here is mock: no real scanning, payments, maps service or BMA connection. State lives in memory and clears on reset or reload. Numbers inside the app are illustrative demo data.</p>`);
+}
+
+const OVERLAYS = { scan: ovScan, add: ovAdd, recipe: ovRecipe, cooked: ovCooked, directions: ovDirections, perk: ovPerk, demo: ovDemo };
+
+function renderOverlay() {
+  const o = state.overlay, host = $('#overlay');
+  host.innerHTML = o ? OVERLAYS[o.type](o) : '';
+  const key = o ? o.type + (o.phase || '') + (o.id || '') : null;
+  if (key && key !== lastOverlayKey) { const dlg = $('[role="dialog"]', host); if (dlg) dlg.focus({ preventScroll: true }); }
+  lastOverlayKey = key;
+}
+
+// ---------- Feedback ----------
+function toast(html, amber = false) {
+  const el = document.createElement('div');
+  el.className = 'toast' + (amber ? ' is-amber' : '');
+  el.innerHTML = html;
+  $('#toasts').append(el);
+  later(() => el.classList.add('out'), 2800);
+  later(() => el.remove(), 3200);
+}
+function confetti() {
+  if (reducedMotion()) return;
+  const colors = ['#F6A609', '#4BA254', '#B9E08A', '#2A6419', '#FFEFC9'];
+  const fx = $('#fx');
+  for (let i = 0; i < 40; i++) {
+    const p = document.createElement('i');
+    p.className = 'confetti';
+    p.style.cssText = `left:${Math.random() * 100}%;background:${colors[i % colors.length]};animation-delay:${Math.random() * 0.35}s;--dx:${(Math.random() - 0.5) * 160}px;--rot:${(Math.random() - 0.5) * 900}deg`;
+    fx.append(p);
+    later(() => p.remove(), 2300);
+  }
+}
+
+/* ============================== 5. HANDLERS ========================== */
+
+// Every qualifying action goes through award(): points, totals, streak, loop arcs, level-ups, celebration.
+function award({ pts, text, icon: emoji, money = 0, kg = 0, items = 0, loop = null }) {
+  const levelBefore = levelIndex(state.xp);
+  const msgs = [[`<b>+${pts} pts</b> ${esc(text)}`, false]];
+  let party = false;
+
+  state.xp += pts; state.points += pts;
+  state.stats.money += money;
+  state.stats.kg = Math.round((state.stats.kg + kg) * 10) / 10;
+  state.stats.items += items;
+  state.log.unshift({ icon: emoji, text, pts, when: 'Just now' });
+
+  if (!state.todayDone) {                       // first action today extends the streak
+    state.todayDone = true; state.streak += 1;
+    const milestone = STREAK_MILESTONES.includes(state.streak);
+    msgs.push([`🔥 ${state.streak}-day streak${milestone ? '. Milestone reached!' : ' and counting'}`, milestone]);
+    party = party || milestone;
+  }
+  if (loop && !state.loop[loop]) {              // close one arc of today's loop
+    state.loop[loop] = true; state.freshArcs.push(loop);
+    if (LOOP.every(l => state.loop[l.key]) && !state.loopBonus) {
+      state.loopBonus = true; state.xp += POINTS.loopBonus; state.points += POINTS.loopBonus;
+      state.log.unshift({ icon: '🔄', text: "Closed today's loop", pts: POINTS.loopBonus, when: 'Just now' });
+      msgs.push([`Loop closed today. +${POINTS.loopBonus} bonus pts`, true]);
+      party = true;
+    }
+  }
+  const levelAfter = levelIndex(state.xp);
+  const levelUp = levelAfter > levelBefore ? LEVELS[levelAfter] : null;
+  if (levelUp) { msgs.push([`${levelUp.icon} Level up: you're now a ${levelUp.name}`, true]); party = true; }
+
+  msgs.forEach(([m, amber], i) => later(() => toast(m, amber), i * 550));
+  if (party) confetti();
+  return { levelUp };
+}
+
+function go(tab) {
+  state.tab = tab;
+  $('#screen').scrollTop = 0;
+}
+function closeOverlay() { state.overlay = null; render(); }
+
+const actions = {
+  // --- Onboarding
+  'ob-next'() { if (state.obStep < 2) state.obStep++; else state.screen = 'app'; $('#screen').scrollTop = 0; render(); },
+  'ob-back'() { state.obStep = Math.max(0, state.obStep - 1); render(); },
+  'ob-skip'() { state.screen = 'app'; render(); },
+
+  // --- Navigation
+  'tab'(d) { state.overlay = null; go(d.tab); render(); },
+  'close-overlay': closeOverlay,
+  'fridge-view'(d) { if (state.tab !== 'fridge') go('fridge'); state.fridgeView = d.view; render(); },
+
+  // --- Fridge: simulated receipt scan
+  'open-scan'() {
+    state.overlay = { type: 'scan', phase: 'scanning' };
+    render();
+    later(() => { if (state.overlay && state.overlay.type === 'scan') { state.overlay.phase = 'found'; render(); } }, 2400);
+  },
+  'scan-confirm'() {
+    RECEIPT.items.forEach(row => state.fridge.push(makeItem(row, { isNew: true })));
+    state.scanned = true; state.overlay = null; state.fridgeView = 'items';
+    award({ pts: POINTS.scan, text: `Logged ${RECEIPT.items.length} items from a receipt`, icon: '🧾', loop: 'eat' });
+    guideSignal('scan');
+    render();
+  },
+
+  // --- Fridge: manual entry
+  'open-add'() { state.overlay = { type: 'add' }; render(); const n = $('#fName'); if (n) n.focus(); },
+  'date-chip'(d, el) {
+    $('#fDate').value = iso(addDays(Number(d.days)));
+    el.parentElement.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', c === el));
+  },
+  'add-item'(form) {
+    const name = form.name.value.trim(), qty = form.qty.value.trim() || '1', date = form.date.value;
+    $('#fNameErr').textContent = name ? '' : 'Enter an item name.';
+    $('#fDateErr').textContent = date ? '' : 'Choose an expiry date.';
+    if (!name) { form.name.focus(); return; }
+    if (!date) { form.date.focus(); return; }
+    const g = guessFood(name);
+    state.fridge.push({ id: 'i' + (++uid), key: g.key, name, th: '', icon: g.icon, qty, expires: date, price: 30, kg: 0.2, isNew: true });
+    state.overlay = null; state.fridgeView = 'items';
+    award({ pts: POINTS.log, text: `Logged ${name}`, icon: g.icon, loop: 'eat' });
+    render();
+  },
+
+  // --- Fridge: item actions
+  'use-item'(d) {
+    const it = state.fridge.find(x => x.id === d.id); if (!it) return;
+    const rescued = isNear(daysLeft(it));
+    state.fridge = state.fridge.filter(x => x !== it);
+    award(rescued
+      ? { pts: POINTS.use, text: `Used ${it.name.toLowerCase()} in time`, icon: it.icon, money: it.price, kg: it.kg, items: 1, loop: 'eat' }
+      : { pts: POINTS.log, text: `Used ${it.name.toLowerCase()}`, icon: it.icon, loop: 'eat' });
+    render();
+  },
+  'bin-item'(d) {
+    const it = state.fridge.find(x => x.id === d.id); if (!it) return;
+    state.fridge = state.fridge.filter(x => x !== it);
+    go('dispose'); render();
+    toast(`${esc(it.name)} removed. Sort it as organic waste to claim your fee.`);
+  },
+
+  // --- Recipes
+  'open-recipe'(d) { state.overlay = { type: 'recipe', id: d.id }; render(); },
+  'cook'(d) {
+    const r = RECIPES.find(x => x.id === d.id), info = recipeInfo(r);
+    const target = missionTarget();
+    const used = info.have.filter(g => !g.keep);                 // staples marked keep stay in the fridge
+    const rescued = used.filter(g => g.near).map(g => g.item);   // near-expiry items count as rescued
+    const usedIds = new Set(used.map(g => g.item.id));
+    state.fridge = state.fridge.filter(it => !usedIds.has(it.id));
+    const missionHit = !state.mission.done && target && info.have.some(g => g.item.id === target.id);
+    if (missionHit) state.mission.done = true;
+    const pts = POINTS.cook + POINTS.perRescue * rescued.length + (missionHit ? POINTS.mission : 0);
+    const money = rescued.reduce((s, it) => s + it.price, 0);
+    const res = award({ pts, text: `Cooked ${r.name}`, icon: r.icon, money, kg: rescued.reduce((s, it) => s + it.kg, 0), items: rescued.length, loop: 'eat' });
+    state.overlay = { type: 'cooked', name: r.name, icon: r.icon, rescued: rescued.map(it => it.name), money, pts, mission: missionHit, levelUp: res.levelUp };
+    guideSignal('cook');
+    render();
+  },
+
+  // --- Deals
+  'deals-view'(d) { state.dealsView = d.view; render(); },
+  'filter-cat'(d) { state.filters.cat = d.cat; render(); },
+  'filter-dist'(d) { state.filters.dist = Number(d.dist); render(); },
+  'filter-ending'() { state.filters.endingSoon = !state.filters.endingSoon; render(); },
+  'clear-filters'() { state.filters = { cat: 'all', dist: 0, endingSoon: false }; render(); },
+  'map-pin'(d) { state.mapStore = d.store; render(); },
+  'navigate'(d) {
+    const deal = state.deals.find(x => x.id === d.id), first = !deal.navigated;
+    if (first) {                                // the saving counts once, on the first tap
+      deal.navigated = true; deal.left = Math.max(0, deal.left - 1);
+      award({ pts: POINTS.deal, text: `Rescued ${deal.name}`, icon: deal.icon, money: deal.was - deal.now, kg: deal.kg, items: 1, loop: 'save' });
+      guideSignal('deal');
+    }
+    state.overlay = { type: 'directions', id: deal.id, first };
+    render();
+  },
+
+  // --- Dispose
+  'sample-photo'() { setPhoto('sample'); },
+  'retake'() { setPhoto(null); },
+  'verify'() {
+    state.dispose.status = 'checking'; render();
+    later(() => {
+      if (state.dispose.status !== 'checking') return;
+      if (state.dispose.forceFail) { state.dispose.forceFail = false; state.dispose.status = 'rejected'; render(); return; }
+      state.dispose.status = 'success';
+      award({ pts: POINTS.dispose, text: 'Sorted organic waste, photo verified', icon: '🗑️', loop: 'sort' });
+      guideSignal('dispose');
+      confetti();
+      render();
+    }, 2200);
+  },
+
+  // --- Rewards
+  'open-perk'(d) { state.overlay = { type: 'perk', id: d.id }; render(); },
+  'redeem'(d) {
+    const p = PERKS.find(x => x.id === d.id);
+    if (state.redeemed[p.id] || state.points < p.cost) return;
+    state.points -= p.cost;
+    state.redeemed[p.id] = 'LOOP-' + p.id.toUpperCase() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+    confetti(); toast(`Redeemed: ${p.name}`, true);
+    render();
+  },
+
+  // --- Demo tools
+  'open-demo'() { state.overlay = { type: 'demo' }; render(); },
+  'replay-intro'() { state.overlay = null; state.guide.active = false; state.screen = 'onboarding'; state.obStep = 0; $('#screen').scrollTop = 0; render(); },
+  'reset': resetDemo,
+  'guide-start'() { state.screen = 'app'; state.guide = { active: true, step: 0, done: {}, scroll: true }; guideGo(0); },
+  'guide-next'() { if (state.guide.step < GUIDE.length - 1) guideGo(state.guide.step + 1); else actions['guide-exit'](); },
+  'guide-back'() { if (state.guide.step > 0) guideGo(state.guide.step - 1); },
+  'guide-exit'() { state.guide.active = false; render(); },
+};
+
+function setPhoto(src) {
+  const d = state.dispose;
+  if (d.photo && d.photo !== 'sample') URL.revokeObjectURL(d.photo);
+  d.photo = src; d.status = src ? 'photo' : 'idle';
+  render();
+}
+
+// Change events: the photo input and the presenter's "fail next check" switch.
+const changes = {
+  'photo'(el) { const file = el.files && el.files[0]; if (file) setPhoto(URL.createObjectURL(file)); },
+  'force-fail'(el) { state.dispose.forceFail = el.checked; },
+};
+
+function resetDemo() {
+  timers.forEach(clearTimeout); timers = [];
+  if (state && state.dispose.photo && state.dispose.photo !== 'sample') URL.revokeObjectURL(state.dispose.photo);
+  $('#toasts').innerHTML = ''; $('#fx').innerHTML = '';
+  uid = 0; lastPoints = null; lastOverlayKey = null;
+  state = seedState();
+  $('#screen').scrollTop = 0;
+  render();
+}
+
+// --- Event wiring: one delegated listener per event type
+document.addEventListener('click', e => {
+  if (e.target.classList && e.target.classList.contains('overlay')) { closeOverlay(); return; }   // tap on the backdrop
+  const el = e.target.closest('[data-action]');
+  if (el && !el.disabled && actions[el.dataset.action]) actions[el.dataset.action](el.dataset, el);
+});
+document.addEventListener('change', e => {
+  const el = e.target.closest('[data-change]');
+  if (el) changes[el.dataset.change](el);
+  else if (e.target.id === 'fDate') document.querySelectorAll('[data-action="date-chip"]').forEach(c => c.setAttribute('aria-pressed', 'false'));
+});
+document.addEventListener('submit', e => {
+  const form = e.target.closest('[data-submit]');
+  if (form) { e.preventDefault(); actions[form.dataset.submit](form); }
+});
+document.addEventListener('keydown', e => {
+  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
+  if (e.key === 'Escape' && state.overlay) closeOverlay();
+  else if (state.guide.active && !typing && e.key === 'ArrowRight') actions['guide-next']();
+  else if (state.guide.active && !typing && e.key === 'ArrowLeft') actions['guide-back']();
+});
+
+/* ============================== 6. DEMO GUIDE ======================== */
+
+// Each step opens a tab, highlights one control and, where `on` is set, ticks itself when that action happens.
+const GUIDE = [
+  { tab: 'home', target: '.loop-card', title: 'One loop, three small actions',
+    text: "Use your fridge, rescue a deal, sort your scraps. Any one keeps the streak; all three close the loop." },
+  { tab: 'fridge', view: 'items', target: '[data-action="open-scan"]', on: 'scan', title: 'Before you eat: scan a receipt',
+    text: 'Tap Scan receipt, then add the items. The fridge sorts itself by what expires first.' },
+  { tab: 'fridge', view: 'recipes', target: '.recipe-card', on: 'cook', title: 'Cook what expires first',
+    text: 'Recipes using near-expiry food come first. Open the top one and tap Cooked this.' },
+  { tab: 'deals', target: '.btn-nav', on: 'deal', title: 'Before you waste: rescue a deal',
+    text: 'Surplus food at 40–60% off, pickup only. Tap Navigate to store to see the saving.' },
+  { tab: 'dispose', target: '.dispose-cta', on: 'dispose', title: 'When you dispose: ไม่เทรวม',
+    text: 'Use a sample photo and verify it to unlock the ฿20 collection fee. Tick the presenter box first to show a rejected photo.' },
+  { tab: 'rewards', target: '.metrics', title: 'Every action counted',
+    text: 'Money, food and CO₂e totals, the streak, level and perks all moved with what you just did.' },
+];
+
+function guideGo(i) {
+  const s = GUIDE[i];
+  state.guide.step = i; state.guide.scroll = true;
+  state.overlay = null;
+  go(s.tab);
+  if (s.view) state.fridgeView = s.view;
+  if (s.tab === 'deals') { state.dealsView = 'list'; state.filters = { cat: 'all', dist: 0, endingSoon: false }; }
+  render();
+}
+function guideSignal(evt) { if (state.guide.active) state.guide.done[evt] = true; }
+
+function renderGuide() {
+  const g = state.guide, host = $('#guide');
+  if (!g.active || state.screen !== 'app') { host.innerHTML = ''; return; }
+  const s = GUIDE[g.step], last = g.step === GUIDE.length - 1, done = s.on && g.done[s.on];
+  host.innerHTML = `
+    <div class="guide-top">Demo guide · ${g.step + 1} of ${GUIDE.length}${done ? `<span class="done">${icon('check', 14)}Done</span>` : ''}</div>
+    <b>${s.title}</b><p>${s.text}</p>
+    <div class="guide-actions">
+      <button class="btn g-ghost" data-action="guide-exit">Exit</button>
+      ${g.step ? '<button class="btn g-ghost" data-action="guide-back">Back</button>' : ''}
+      <button class="btn g-next" data-action="guide-next">${last ? 'Finish' : 'Next'}${icon('chev', 16)}</button>
+    </div>`;
+  const target = state.tab === s.tab && !state.overlay ? $('#screen').querySelector(s.target) : null;
+  if (target) {
+    target.classList.add('guide-target');
+    const box = target.getBoundingClientRect(), view = $('#screen').getBoundingClientRect();
+    if (g.scroll || box.top < view.top || box.bottom > view.bottom) target.scrollIntoView({ block: 'center' });
+    g.scroll = false;
+  }
+}
+
+/* ============================== 7. BOOT ============================== */
+
+$('#brandMark').innerHTML = ringSvg({ eat: true, save: true, sort: true }, { size: 44, light: true });
+$('#journey').innerHTML = LOOP.map(l => `<li><span class="tile">${icon(l.icon)}</span><div><b>${l.phase}</b><span>${l.blurb}</span></div></li>`).join('');
+resetDemo();
+</script>
+</body>
+</html>
